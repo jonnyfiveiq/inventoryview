@@ -21,7 +21,9 @@ RUN npm run build
 FROM quay.io/centos/centos:stream9 AS age-builder
 
 RUN dnf install -y --nogpgcheck \
+        https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
         https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm \
+    && dnf config-manager --set-enabled crb \
     && dnf install -y --nobest --nogpgcheck \
         postgresql16-server \
         postgresql16-devel \
