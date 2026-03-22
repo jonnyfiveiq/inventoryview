@@ -39,8 +39,8 @@ Infrastructure inventory dashboard with a graph-based data model. Discover, brow
 Pull and run a single container — no build required, batteries included:
 
 ```bash
-docker pull quay.io/jonnyfiveiq/inventoryview:latest
-docker run -d --name inventoryview -p 8080:8080 quay.io/jonnyfiveiq/inventoryview:latest
+docker pull quay.io/jhardy/inventoryview:latest
+docker run -d --name inventoryview -p 8080:8080 quay.io/jhardy/inventoryview:latest
 ```
 
 On first boot the container automatically:
@@ -71,7 +71,7 @@ docker stop inventoryview && docker rm inventoryview
 ```bash
 docker run -d --name inventoryview -p 8080:8080 \
   -v inventoryview-data:/var/lib/pgsql/data \
-  quay.io/jonnyfiveiq/inventoryview:latest
+  quay.io/jhardy/inventoryview:latest
 ```
 
 ---
@@ -208,20 +208,24 @@ Resources from any vendor are classified into a universal type system:
 
 ## Building the container image
 
-To build the all-in-one image locally:
+Build and push with the included script:
+
+```bash
+./build-and-push.sh            # build + push to quay.io/jhardy/inventoryview:latest
+./build-and-push.sh --no-push  # build only, don't push
+./build-and-push.sh --tag v1.0 # custom tag
+./build-and-push.sh --docker   # force docker (default: auto-detects podman/docker)
+```
+
+Or manually:
 
 ```bash
 docker build -t inventoryview:latest -f backend/Dockerfile .
+docker tag inventoryview:latest quay.io/jhardy/inventoryview:latest
+docker push quay.io/jhardy/inventoryview:latest
 ```
 
-> The build context is the repo root. The Dockerfile uses a multi-stage build: Node 18 (frontend) + CentOS Stream 9 (AGE build) + CentOS Stream 9 (runtime with PostgreSQL 16, Python 3.12, and the compiled frontend).
-
-To push to quay.io:
-
-```bash
-docker tag inventoryview:latest quay.io/jonnyfiveiq/inventoryview:latest
-docker push quay.io/jonnyfiveiq/inventoryview:latest
-```
+> Multi-stage build: Node 18 (frontend) + CentOS Stream 9 (AGE compile) + CentOS Stream 9 (runtime with PostgreSQL 16, Python 3.12, compiled frontend).
 
 ## Environment variables
 
