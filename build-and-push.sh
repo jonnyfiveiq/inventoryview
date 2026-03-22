@@ -10,7 +10,13 @@ REGISTRY="quay.io/jhardy"
 IMAGE="inventoryview"
 TAG="latest"
 PUSH=true
-BUILDER="${CONTAINER_ENGINE:-$(command -v podman 2>/dev/null && echo podman || echo docker)}"
+if [ -n "${CONTAINER_ENGINE:-}" ]; then
+    BUILDER="$CONTAINER_ENGINE"
+elif command -v podman &>/dev/null; then
+    BUILDER="podman"
+else
+    BUILDER="docker"
+fi
 
 red()   { printf '\033[1;31m%s\033[0m\n' "$*"; }
 green() { printf '\033[1;32m%s\033[0m\n' "$*"; }
