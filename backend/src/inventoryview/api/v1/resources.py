@@ -45,13 +45,15 @@ async def list_all(
     state: str | None = Query(None),
     cursor: str | None = Query(None),
     page_size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
+    search: str | None = Query(None, min_length=2),
     payload: dict = Depends(require_auth),
 ):
-    """List resources with filtering and cursor-based pagination."""
+    """List resources with filtering, search, and cursor-based pagination."""
     pool = get_pool()
     settings = request.app.state.settings
     return await list_resources(
-        pool, settings.graph_name, vendor, category, region, state, cursor, page_size
+        pool, settings.graph_name, vendor, category, region, state, cursor, page_size,
+        search=search,
     )
 
 

@@ -8,6 +8,7 @@ export interface ListResourcesParams {
   state?: string;
   cursor?: string;
   page_size?: number;
+  search?: string;
 }
 
 export async function listResources(params: ListResourcesParams = {}): Promise<PaginatedResponse<Resource>> {

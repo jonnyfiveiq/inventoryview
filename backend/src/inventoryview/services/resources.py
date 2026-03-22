@@ -65,6 +65,7 @@ async def list_resources(
     state: str | None = None,
     cursor: str | None = None,
     page_size: int | None = None,
+    search: str | None = None,
 ) -> PaginatedResponse[ResourceResponse]:
     """List resources with optional filters and cursor-based pagination."""
     page_size = clamp_page_size(page_size)
@@ -88,7 +89,7 @@ async def list_resources(
 
     async with pool.connection() as conn:
         rows = await query_resource_nodes(
-            conn, graph_name, filters, cursor_uid, page_size
+            conn, graph_name, filters, cursor_uid, page_size, search=search
         )
 
     # Determine if there are more pages

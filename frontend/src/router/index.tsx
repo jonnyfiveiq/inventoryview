@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import ProtectedRoute from "./ProtectedRoute";
+import AppLayout from "@/components/layout/AppLayout";
 
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
 const SetupPage = lazy(() => import("@/pages/SetupPage"));
@@ -19,14 +20,6 @@ function Loading() {
   );
 }
 
-function Protected({ children }: { children: React.ReactNode }) {
-  return (
-    <ProtectedRoute>
-      <Suspense fallback={<Loading />}>{children}</Suspense>
-    </ProtectedRoute>
-  );
-}
-
 export const router = createBrowserRouter([
   {
     path: "/login",
@@ -37,24 +30,33 @@ export const router = createBrowserRouter([
     element: <Suspense fallback={<Loading />}><SetupPage /></Suspense>,
   },
   {
-    path: "/",
-    element: <Protected><LandingPage /></Protected>,
-  },
-  {
-    path: "/providers/:vendor",
-    element: <Protected><ProviderPage /></Protected>,
-  },
-  {
-    path: "/vendors/:vendor",
-    element: <Protected><VendorPage /></Protected>,
-  },
-  {
-    path: "/resources/:uid",
-    element: <Protected><ResourceDetailPage /></Protected>,
-  },
-  {
-    path: "/analytics",
-    element: <Protected><AnalyticsPage /></Protected>,
+    element: (
+      <ProtectedRoute>
+        <AppLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: "/",
+        element: <Suspense fallback={<Loading />}><LandingPage /></Suspense>,
+      },
+      {
+        path: "/providers/:vendor",
+        element: <Suspense fallback={<Loading />}><ProviderPage /></Suspense>,
+      },
+      {
+        path: "/vendors/:vendor",
+        element: <Suspense fallback={<Loading />}><VendorPage /></Suspense>,
+      },
+      {
+        path: "/resources/:uid",
+        element: <Suspense fallback={<Loading />}><ResourceDetailPage /></Suspense>,
+      },
+      {
+        path: "/analytics",
+        element: <Suspense fallback={<Loading />}><AnalyticsPage /></Suspense>,
+      },
+    ],
   },
   {
     path: "*",

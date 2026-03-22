@@ -11,6 +11,7 @@ Infrastructure inventory dashboard with a graph-based data model. Discover, brow
 ## What it does
 
 - **Netflix-style landing page** — horizontal carousels of resources grouped by normalised type (virtual machines, hypervisors, datastores, clusters, networks, etc.)
+- **Spotlight search** — macOS Spotlight-style universal search overlay (Cmd+K / Ctrl+K) with real-time results grouped by taxonomy type across all providers, keyboard navigation, and sidebar search icon
 - **Vendor carousel** — colour-coded cards for each provider with resource counts; click through to a vendor drill-down page
 - **Resources Discovered heatmap** — at-a-glance summary showing counts by type, provider bar charts, and state distribution
 - **Interactive graph visualisation** — Cytoscape.js overlay showing resource relationships (DEPENDS_ON, HOSTED_ON, MEMBER_OF, CONTAINS, CONNECTED_TO, ATTACHED_TO, MANAGES, etc.) with type-based node shapes, adjustable depth, pan/zoom, and click-to-expand
@@ -152,10 +153,11 @@ Open http://localhost:5173 and log in with `admin` / `SuperSecretPass123`.
 │   │   │   ├── carousel/      # ResourceCarousel, ResourceCard, VendorCarousel
 │   │   │   ├── graph/         # GraphOverlay, GraphCanvas, GraphControls
 │   │   │   ├── heatmap/       # HeatmapStrip, HeatmapDetail
-│   │   │   ├── layout/        # Sidebar, AppLayout, ErrorBanner
+│   │   │   ├── layout/        # Sidebar, AppLayout (layout route), ErrorBanner
 │   │   │   ├── provider/      # ResourceTable, FilterBar
-│   │   │   └── resource/      # DriftModal
-│   │   ├── hooks/             # TanStack Query hooks (useResources, useGraph, useAuth)
+│   │   │   ├── resource/      # DriftModal
+│   │   │   └── search/        # SpotlightOverlay, SearchInput, SearchResults, TaxonomyGroup, SearchResultItem
+│   │   ├── hooks/             # TanStack Query hooks (useResources, useSearch, useGraph, useAuth)
 │   │   ├── pages/             # LoginPage, LandingPage, VendorPage, ProviderPage, ResourceDetailPage, AnalyticsPage
 │   │   ├── stores/            # Zustand auth store
 │   │   └── router/            # React Router config, ProtectedRoute
@@ -165,7 +167,8 @@ Open http://localhost:5173 and log in with `admin` / `SuperSecretPass123`.
 │   └── Dockerfile.postgres    # PostgreSQL 16 + Apache AGE
 ├── specs/                      # Feature specifications (speckit)
 │   ├── 001-foundation-core-api/
-│   └── 002-inventory-frontend-dashboard/
+│   ├── 002-inventory-frontend-dashboard/
+│   └── 003-spotlight-search/
 ├── seed_test_data.sh          # Multi-vendor test data seeder
 └── Makefile
 ```
@@ -181,7 +184,7 @@ All endpoints under `/api/v1/`. Authentication via JWT bearer token.
 | `/setup/init` | POST | Create initial admin account (no auth) |
 | `/auth/login` | POST | Authenticate and receive JWT |
 | `/auth/revoke` | POST | Revoke a token |
-| `/resources` | GET | List resources with filtering and cursor pagination |
+| `/resources` | GET | List resources with filtering, search, and cursor pagination |
 | `/resources/{uid}` | GET | Get full resource detail |
 | `/resources/{uid}/relationships` | GET | List relationships for a resource |
 | `/resources/{uid}/graph` | GET | Graph traversal (BFS) with configurable depth |

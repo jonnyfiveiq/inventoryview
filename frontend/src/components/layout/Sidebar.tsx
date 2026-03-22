@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   Home,
   Server,
+  Search,
   BarChart3,
   ChevronLeft,
   ChevronRight,
@@ -13,7 +14,11 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAllResources } from "@/hooks/useResources";
 
-export default function Sidebar() {
+interface SidebarProps {
+  onSearchClick?: () => void;
+}
+
+export default function Sidebar({ onSearchClick }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [providersOpen, setProvidersOpen] = useState(true);
   const location = useLocation();
@@ -62,6 +67,26 @@ export default function Sidebar() {
           active={isActive("/")}
           collapsed={collapsed}
         />
+
+        {/* Search */}
+        <button
+          onClick={onSearchClick}
+          className={cn(
+            "flex items-center w-full px-4 py-2.5 text-sm text-text-muted hover:text-text hover:bg-surface-hover transition-colors",
+            collapsed && "justify-center"
+          )}
+          title={collapsed ? "Search (⌘K)" : undefined}
+        >
+          <Search className="w-5 h-5 shrink-0" />
+          {!collapsed && (
+            <>
+              <span className="ml-3 flex-1 text-left">Search</span>
+              <kbd className="text-[10px] font-mono text-text-dim bg-surface-hover px-1.5 py-0.5 rounded border border-border">
+                ⌘K
+              </kbd>
+            </>
+          )}
+        </button>
 
         {/* Providers section */}
         <div>

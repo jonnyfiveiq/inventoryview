@@ -419,10 +419,13 @@ async def query_resource_nodes(
     filters: dict,
     cursor_uid: str | None = None,
     page_size: int = 50,
+    search: str | None = None,
 ) -> list[dict]:
     """Query Resource nodes with optional filters and cursor-based pagination.
 
     Filters are applied as WHERE clauses (exact match).
+    Search performs case-insensitive substring matching across name, vendor_id,
+    state, vendor, and normalised_type fields.
     Results are ordered by uid with cursor-based pagination using WHERE uid > cursor_uid.
     Returns up to page_size + 1 rows (extra row indicates more pages).
     """
@@ -432,6 +435,15 @@ async def query_resource_nodes(
         if val is not None:
             escaped = str(val).replace("'", "\\'")
             where_parts.append(f"r.{key} = '{escaped}'")
+
+    if search is not None:
+        escaped_search = search.replace("'", "\\'")
+        search_fields = ["name", "vendor_id", "state", "vendor", "normalised_type"]
+        search_clauses = [
+            f"toLower(r.{field}) CONTAINS toLower('{escaped_search}')"
+            for field in search_fields
+        ]
+        where_parts.append(f"({' OR '.join(search_clauses)})")
 
     if cursor_uid is not None:
         escaped_cursor = cursor_uid.replace("'", "\\'")
