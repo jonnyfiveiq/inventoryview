@@ -1,0 +1,196 @@
+# InventoryView
+
+Infrastructure inventory dashboard with a graph-based data model. Discover, browse, and visualise relationships across your entire infrastructure — VMware, AWS, Azure, OpenShift — from a single pane of glass.
+
+![Dark Theme](https://img.shields.io/badge/theme-dark-1a1a2e)
+![React 19](https://img.shields.io/badge/React-19-61dafb)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688)
+![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16%20%2B%20AGE-336791)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+## What it does
+
+- **Netflix-style landing page** — horizontal carousels of resources grouped by normalised type (virtual machines, hypervisors, datastores, clusters, networks, etc.)
+- **Vendor carousel** — colour-coded cards for each provider with resource counts; click through to a vendor drill-down page
+- **Resources Discovered heatmap** — at-a-glance summary showing counts by type, provider bar charts, and state distribution
+- **Interactive graph visualisation** — Cytoscape.js overlay showing resource relationships (DEPENDS_ON, HOSTED_ON, MEMBER_OF, CONTAINS, CONNECTED_TO, ATTACHED_TO, MANAGES, etc.) with type-based node shapes, adjustable depth, pan/zoom, and click-to-expand
+- **Drift tracking** — see how resource configuration changes over time (state, CPU, memory, IP, etc.) in a date-grouped modal
+- **Provider drill-down** — filterable, paginated resource tables per vendor with inline graph access
+- **Dark theme throughout** — modern, clean aesthetic
+
+## Architecture
+
+```
+┌─────────────┐       ┌─────────────┐       ┌──────────────────────┐
+│   Frontend   │──────▶│   Backend   │──────▶│  PostgreSQL 16       │
+│  React SPA   │ REST  │   FastAPI   │  SQL  │  + Apache AGE graph  │
+│  Vite + TS   │       │  Python 3.12│       │                      │
+└─────────────┘       └─────────────┘       └──────────────────────┘
+```
+
+**Frontend**: React 19, TypeScript 5.7, Vite 6, Tailwind CSS v3, Cytoscape.js, TanStack Query v5, Zustand, Axios
+
+**Backend**: FastAPI, psycopg3, Alembic, PyJWT, Argon2, Pydantic v2
+
+**Database**: PostgreSQL 16 with [Apache AGE](https://age.apache.org/) graph extension for relationship traversal via Cypher queries
+
+## Quick start
+
+### Prerequisites
+
+- [Podman](https://podman.io/) or [Docker](https://www.docker.com/) with Compose
+- [Node.js](https://nodejs.org/) 18+ and npm
+
+### 1. Build the container images
+
+```bash
+# PostgreSQL + Apache AGE
+podman build -t inventoryview-db:latest -f docker/Dockerfile.postgres docker/
+
+# Backend
+podman build -t inventoryview-backend:latest -f backend/Dockerfile.dev backend/
+```
+
+### 2. Start the services
+
+```bash
+podman compose -f docker/docker-compose.yml up -d
+```
+
+This starts PostgreSQL (port 5432) and the backend API (port 8080). Alembic migrations run automatically on startup.
+
+### 3. Seed test data
+
+```bash
+# Seed all vendors (VMware, AWS, Azure, OpenShift)
+./seed_test_data.sh --vendor=all
+
+# Or seed individually
+./seed_test_data.sh --vendor=vmware
+./seed_test_data.sh --vendor=aws
+./seed_test_data.sh --vendor=azure
+./seed_test_data.sh --vendor=openshift
+```
+
+The seed script creates an admin account (`admin` / `SuperSecretPass123`), then populates:
+- **96 resources** across 4 vendors
+- **146 relationships** modelling real infrastructure topology
+- **44 drift entries** showing configuration changes over time
+
+### 4. Start the frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:5173 and log in with `admin` / `SuperSecretPass123`.
+
+## Project structure
+
+```
+.
+├── backend/                    # FastAPI backend
+│   ├── src/inventoryview/
+│   │   ├── api/v1/            # REST endpoints (auth, resources, relationships, health, setup, credentials)
+│   │   ├── services/          # Business logic (resources, graph, drift, auth, credentials, vault)
+│   │   ├── models/            # Data models
+│   │   ├── schemas/           # Pydantic request/response schemas
+│   │   └── middleware/        # Auth middleware
+│   ├── alembic/versions/      # Database migrations
+│   └── pyproject.toml
+├── frontend/                   # React SPA
+│   ├── src/
+│   │   ├── api/               # Axios client, API functions, TypeScript types
+│   │   ├── components/
+│   │   │   ├── carousel/      # ResourceCarousel, ResourceCard, VendorCarousel
+│   │   │   ├── graph/         # GraphOverlay, GraphCanvas, GraphControls
+│   │   │   ├── heatmap/       # HeatmapStrip, HeatmapDetail
+│   │   │   ├── layout/        # Sidebar, AppLayout, ErrorBanner
+│   │   │   ├── provider/      # ResourceTable, FilterBar
+│   │   │   └── resource/      # DriftModal
+│   │   ├── hooks/             # TanStack Query hooks (useResources, useGraph, useAuth)
+│   │   ├── pages/             # LoginPage, LandingPage, VendorPage, ProviderPage, ResourceDetailPage, AnalyticsPage
+│   │   ├── stores/            # Zustand auth store
+│   │   └── router/            # React Router config, ProtectedRoute
+│   └── package.json
+├── docker/                     # Container definitions
+│   ├── docker-compose.yml
+│   └── Dockerfile.postgres    # PostgreSQL 16 + Apache AGE
+├── specs/                      # Feature specifications (speckit)
+│   ├── 001-foundation-core-api/
+│   └── 002-inventory-frontend-dashboard/
+├── seed_test_data.sh          # Multi-vendor test data seeder
+└── Makefile
+```
+
+## API overview
+
+All endpoints under `/api/v1/`. Authentication via JWT bearer token.
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check (no auth) |
+| `/setup/status` | GET | Check if initial setup is complete (no auth) |
+| `/setup/init` | POST | Create initial admin account (no auth) |
+| `/auth/login` | POST | Authenticate and receive JWT |
+| `/auth/revoke` | POST | Revoke a token |
+| `/resources` | GET | List resources with filtering and cursor pagination |
+| `/resources/{uid}` | GET | Get full resource detail |
+| `/resources/{uid}/relationships` | GET | List relationships for a resource |
+| `/resources/{uid}/graph` | GET | Graph traversal (BFS) with configurable depth |
+| `/resources/{uid}/drift` | GET | Drift history for a resource |
+| `/resources/{uid}/drift/exists` | GET | Check if drift entries exist |
+| `/resources/{uid}/drift` | POST | Record a drift entry |
+| `/credentials` | GET/POST | Manage collector credentials |
+
+## Graph model
+
+Resources are stored as nodes in an Apache AGE graph. Relationships are typed, directed edges:
+
+```
+DEPENDS_ON, HOSTED_ON, MEMBER_OF, CONTAINS, CONNECTED_TO,
+ATTACHED_TO, MANAGES, ROUTES_TO, PEERS_WITH
+```
+
+The graph API performs iterative BFS traversal per depth level, returning nodes and edges for Cytoscape.js rendering. Each node carries `normalised_type` which determines its visual shape in the graph overlay (ellipse, hexagon, barrel, diamond, triangle, pentagon, etc.).
+
+## Normalised taxonomy
+
+Resources from any vendor are classified into a universal type system:
+
+`virtual_machine`, `hypervisor`, `datastore`, `virtual_switch`, `port_group`, `cluster`, `datacenter`, `resource_pool`, `management_plane`, `folder`, `network`, `subnet`, `security_group`, `load_balancer`, `object_store`, `managed_database`, `kubernetes_cluster`, `kubernetes_node`, `namespace`, `deployment`, `statefulset`, `ingress`, `service`, `persistent_volume`, `route`, `virtual_network`, `network_gateway`
+
+## Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `IV_DATABASE_URL` | — | PostgreSQL connection string |
+| `IV_VAULT_PASSPHRASE` | — | Encryption key for stored credentials |
+| `VITE_API_BASE_URL` | `/api/v1` | Backend API base URL (frontend) |
+| `SEED_BASE_URL` | `http://localhost:8080/api/v1` | Backend URL for seed script |
+| `SEED_PASSWORD` | `SuperSecretPass123` | Admin password for seed script |
+
+## Development
+
+```bash
+# Backend hot-reload (via volume mounts in docker-compose)
+podman compose -f docker/docker-compose.yml up -d
+
+# Frontend dev server with API proxy
+cd frontend && npm run dev
+
+# Run backend tests
+cd backend && python -m pytest -v
+
+# Lint backend
+cd backend && python -m ruff check src/ tests/
+
+# Build frontend for production
+cd frontend && npm run build
+```
+
+## Licence
+
+MIT
