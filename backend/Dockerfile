@@ -20,9 +20,9 @@ RUN npm run build
 # ----------------------------------------------------------
 FROM quay.io/centos/centos:stream9 AS age-builder
 
-RUN dnf install -y \
+RUN dnf install -y --nogpgcheck \
         https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm \
-    && dnf install -y --nobest \
+    && dnf install -y --nobest --nogpgcheck \
         postgresql16-server \
         postgresql16-devel \
         gcc \
@@ -47,9 +47,9 @@ RUN git clone --branch release/PG16/1.5.0 --depth 1 \
 FROM quay.io/centos/centos:stream9
 
 # Install PGDG repo, PostgreSQL 16, Python 3.12, and curl (for seed script)
-RUN dnf install -y \
+RUN dnf install -y --nogpgcheck \
         https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm \
-    && dnf install -y --nobest \
+    && dnf install -y --nobest --nogpgcheck \
         postgresql16-server \
         postgresql16 \
         python3.12 \
