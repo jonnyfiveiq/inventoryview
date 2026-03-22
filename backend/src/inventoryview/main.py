@@ -173,6 +173,29 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(v1_router, prefix="/api/v1")
 
+    # Serve frontend SPA static files if the UI directory exists
+    import os
+    from pathlib import Path
+
+    ui_dir = Path(os.environ.get("IV_UI_DIR", "/app/ui"))
+    if ui_dir.is_dir() and (ui_dir / "index.html").is_file():
+        from fastapi.staticfiles import StaticFiles
+        from fastapi.responses import FileResponse
+
+        # Serve hashed asset files directly
+        if (ui_dir / "assets").is_dir():
+            app.mount("/assets", StaticFiles(directory=str(ui_dir / "assets")), name="assets")
+
+        # Serve root-level static files (favicon, etc.) and SPA fallback
+        @app.get("/{full_path:path}")
+        async def serve_frontend(full_path: str):
+            file_path = ui_dir / full_path
+            if full_path and ".." not in full_path and file_path.is_file():
+                return FileResponse(str(file_path))
+            return FileResponse(str(ui_dir / "index.html"))
+
+        logger.info("Serving frontend UI from %s", ui_dir)
+
     return app
 
 

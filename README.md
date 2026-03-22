@@ -34,7 +34,51 @@ Infrastructure inventory dashboard with a graph-based data model. Discover, brow
 
 **Database**: PostgreSQL 16 with [Apache AGE](https://age.apache.org/) graph extension for relationship traversal via Cypher queries
 
-## Quick start
+## Try it now
+
+Pull and run a single container — no build required, batteries included:
+
+```bash
+docker pull quay.io/jonnyfiveiq/inventoryview:latest
+docker run -d --name inventoryview -p 8080:8080 quay.io/jonnyfiveiq/inventoryview:latest
+```
+
+On first boot the container automatically:
+1. Starts PostgreSQL 16 with Apache AGE
+2. Runs database migrations
+3. Seeds demo data (96 resources, 146 relationships, 44 drift entries across VMware, AWS, Azure, OpenShift)
+
+Open **http://localhost:8080** and log in with `admin` / `SuperSecretPass123`.
+
+To stop and clean up:
+
+```bash
+docker stop inventoryview && docker rm inventoryview
+```
+
+> Works with both `docker` and `podman` — just substitute the command.
+
+### Container environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `IV_SEED_ON_BOOT` | `true` | Auto-seed demo data on first start |
+| `IV_VAULT_PASSPHRASE` | `default-dev-passphrase` | Encryption key for stored credentials |
+| `SEED_PASSWORD` | `SuperSecretPass123` | Admin password |
+
+### Persist data across restarts
+
+```bash
+docker run -d --name inventoryview -p 8080:8080 \
+  -v inventoryview-data:/var/lib/pgsql/data \
+  quay.io/jonnyfiveiq/inventoryview:latest
+```
+
+---
+
+## Development setup
+
+For working on the codebase with hot-reload:
 
 ### Prerequisites
 
@@ -162,25 +206,38 @@ Resources from any vendor are classified into a universal type system:
 
 `virtual_machine`, `hypervisor`, `datastore`, `virtual_switch`, `port_group`, `cluster`, `datacenter`, `resource_pool`, `management_plane`, `folder`, `network`, `subnet`, `security_group`, `load_balancer`, `object_store`, `managed_database`, `kubernetes_cluster`, `kubernetes_node`, `namespace`, `deployment`, `statefulset`, `ingress`, `service`, `persistent_volume`, `route`, `virtual_network`, `network_gateway`
 
+## Building the container image
+
+To build the all-in-one image locally:
+
+```bash
+docker build -t inventoryview:latest -f backend/Dockerfile .
+```
+
+> The build context is the repo root. The Dockerfile uses a multi-stage build: Node 18 (frontend) + CentOS Stream 9 (AGE build) + CentOS Stream 9 (runtime with PostgreSQL 16, Python 3.12, and the compiled frontend).
+
+To push to quay.io:
+
+```bash
+docker tag inventoryview:latest quay.io/jonnyfiveiq/inventoryview:latest
+docker push quay.io/jonnyfiveiq/inventoryview:latest
+```
+
 ## Environment variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `IV_DATABASE_URL` | — | PostgreSQL connection string |
-| `IV_VAULT_PASSPHRASE` | — | Encryption key for stored credentials |
-| `VITE_API_BASE_URL` | `/api/v1` | Backend API base URL (frontend) |
+| `IV_DATABASE_URL` | `postgresql://postgres@127.0.0.1:5432/inventoryview` | PostgreSQL connection string |
+| `IV_VAULT_PASSPHRASE` | `default-dev-passphrase` | Encryption key for stored credentials |
+| `IV_SEED_ON_BOOT` | `true` | Auto-seed demo data on first start |
+| `IV_UI_DIR` | `/app/ui` | Path to frontend static files |
+| `SEED_PASSWORD` | `SuperSecretPass123` | Admin password for seeding |
+| `VITE_API_BASE_URL` | `/api/v1` | Backend API base URL (frontend dev only) |
 | `SEED_BASE_URL` | `http://localhost:8080/api/v1` | Backend URL for seed script |
-| `SEED_PASSWORD` | `SuperSecretPass123` | Admin password for seed script |
 
-## Development
+## Useful commands
 
 ```bash
-# Backend hot-reload (via volume mounts in docker-compose)
-podman compose -f docker/docker-compose.yml up -d
-
-# Frontend dev server with API proxy
-cd frontend && npm run dev
-
 # Run backend tests
 cd backend && python -m pytest -v
 
