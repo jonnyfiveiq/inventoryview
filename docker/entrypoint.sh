@@ -12,6 +12,8 @@ IV_DB_USER="${IV_DB_USER:-inventoryview}"
 IV_DB_PASSWORD="${IV_DB_PASSWORD:-inventoryview}"
 IV_SEED_ON_BOOT="${IV_SEED_ON_BOOT:-false}"
 SEED_PASSWORD="${SEED_PASSWORD:-SuperSecretPass123}"
+PGBIN="/usr/pgsql-16/bin"
+export PATH="${PGBIN}:${PATH}"
 
 green() { printf '\033[1;32m%s\033[0m\n' "$*"; }
 dim()   { printf '\033[2m%s\033[0m\n' "$*"; }
@@ -21,7 +23,7 @@ dim()   { printf '\033[2m%s\033[0m\n' "$*"; }
 # ----------------------------------------------------------
 if [ ! -s "$PGDATA/PG_VERSION" ]; then
     green "[inventoryview] Initialising PostgreSQL data directory..."
-    su - postgres -c "initdb -D '$PGDATA'"
+    su - postgres -c "${PGBIN}/initdb -D '$PGDATA'"
 
     # Allow local trust and network md5 auth
     cat > "$PGDATA/pg_hba.conf" <<'HBA'
@@ -36,7 +38,9 @@ fi
 # 2. Start PostgreSQL in the background
 # ----------------------------------------------------------
 green "[inventoryview] Starting PostgreSQL..."
-su - postgres -c "pg_ctl -D '$PGDATA' -l /var/log/postgresql.log -o '-c listen_addresses=127.0.0.1 -c shared_preload_libraries=age' start"
+touch /var/log/postgresql.log
+chown postgres:postgres /var/log/postgresql.log
+su - postgres -c "${PGBIN}/pg_ctl -D '$PGDATA' -l /var/log/postgresql.log -o '-c listen_addresses=127.0.0.1 -c shared_preload_libraries=age' start"
 
 # ----------------------------------------------------------
 # 3. Wait for PostgreSQL to accept connections
@@ -52,11 +56,11 @@ green "[inventoryview] PostgreSQL is ready."
 # ----------------------------------------------------------
 dim "[inventoryview] Ensuring database exists..."
 
-su - postgres -c "psql -tc \"SELECT 1 FROM pg_database WHERE datname='${IV_DB_NAME}'\"" \
+su - postgres -c "${PGBIN}/psql -tc \"SELECT 1 FROM pg_database WHERE datname='${IV_DB_NAME}'\"" \
     | grep -q 1 \
-    || su - postgres -c "psql -c \"CREATE DATABASE ${IV_DB_NAME};\""
+    || su - postgres -c "${PGBIN}/psql -c \"CREATE DATABASE ${IV_DB_NAME};\""
 
-su - postgres -c "psql -d '${IV_DB_NAME}' -c 'CREATE EXTENSION IF NOT EXISTS age;'"
+su - postgres -c "${PGBIN}/psql -d '${IV_DB_NAME}' -c 'CREATE EXTENSION IF NOT EXISTS age;'"
 
 # ----------------------------------------------------------
 # 5. Run Alembic migrations
@@ -83,6 +87,12 @@ if [ "$IV_SEED_ON_BOOT" = "true" ] && [ ! -f "$SEED_MARKER" ]; then
         fi
         sleep 1
     done
+
+    # Create admin account via setup endpoint
+    curl -sf -X POST http://127.0.0.1:8080/api/v1/setup/init \
+        -H 'Content-Type: application/json' \
+        -d "{\"username\":\"admin\",\"password\":\"${SEED_PASSWORD}\"}" \
+        > /dev/null 2>&1 || dim "[inventoryview] Admin account may already exist"
 
     # Run the seed script
     export SEED_BASE_URL="http://127.0.0.1:8080/api/v1"

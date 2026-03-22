@@ -46,7 +46,8 @@ docker run -d --name inventoryview -p 8080:8080 quay.io/jhardy/inventoryview:lat
 On first boot the container automatically:
 1. Starts PostgreSQL 16 with Apache AGE
 2. Runs database migrations
-3. Seeds demo data (96 resources, 146 relationships, 44 drift entries across VMware, AWS, Azure, OpenShift)
+3. Creates the admin account
+4. Seeds demo data (96 resources, 146 relationships, 44 drift entries across VMware, AWS, Azure, OpenShift)
 
 Open **http://localhost:8080** and log in with `admin` / `SuperSecretPass123`.
 

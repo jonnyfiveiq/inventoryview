@@ -41,7 +41,9 @@ RUN git clone --branch release/PG16/1.5.0 --depth 1 \
         https://github.com/apache/age.git /tmp/age \
     && cd /tmp/age \
     && make PG_CONFIG=/usr/pgsql-16/bin/pg_config -j"$(nproc)" \
-    && make PG_CONFIG=/usr/pgsql-16/bin/pg_config install
+    && ( make PG_CONFIG=/usr/pgsql-16/bin/pg_config install 2>/dev/null \
+         || ( cp age.so /usr/pgsql-16/lib/ \
+              && cp age.control age--*.sql /usr/pgsql-16/share/extension/ ) )
 
 # ----------------------------------------------------------
 # Stage 3: final runtime image
@@ -51,7 +53,7 @@ FROM quay.io/centos/centos:stream9
 # Install PGDG repo, PostgreSQL 16, Python 3.12, and curl (for seed script)
 RUN dnf install -y --nogpgcheck \
         https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm \
-    && dnf install -y --nobest --nogpgcheck \
+    && dnf install -y --nobest --nogpgcheck --allowerasing \
         postgresql16-server \
         postgresql16 \
         python3.12 \
