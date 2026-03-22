@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Edge type colours (for JS access) */
+  --color-edge-depends-on: #ef4444;
+  --color-edge-hosted-on: #3b82f6;
+  --color-edge-member-of: #22c55e;
+  --color-edge-contains: #a855f7;
+  --color-edge-connected-to: #06b6d4;
+  --color-edge-attached-to: #eab308;
+  --color-edge-manages: #f97316;
+  --color-edge-routes-to: #14b8a6;
+  --color-edge-peers-with: #ec4899;
+
+  /* State colours (for JS access) */
+  --color-state-on: #22c55e;
+  --color-state-off: #6b7280;
+  --color-state-maintenance: #f59e0b;
+  --color-state-error: #ef4444;
+  --color-state-connected: #22c55e;
+  --color-state-disconnected: #6b7280;
+
+  /* Vendor colours (for JS access) */
+  --color-vendor-vmware: #60a5fa;
+  --color-vendor-aws: #f59e0b;
+  --color-vendor-azure: #06b6d4;
+  --color-vendor-openshift: #ef4444;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #0a0a0f;
+  color: #e4e4ef;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111118;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2a3a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a4a;
+}

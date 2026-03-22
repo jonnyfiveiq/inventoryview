@@ -1,0 +1,84 @@
+# PostgreSQL 16 + Apache AGE on CentOS Stream 9
+FROM quay.io/centos/centos:stream9 AS builder
+
+RUN dnf install -y --nogpgcheck \
+        https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
+        https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm \
+    && dnf config-manager --set-enabled crb \
+    && dnf install -y --nobest --nogpgcheck \
+        postgresql16-server \
+        postgresql16-devel \
+        gcc \
+        make \
+        git \
+        readline-devel \
+        zlib-devel \
+        flex \
+        bison \
+        perl \
+    && dnf clean all
+
+RUN git clone --branch release/PG16/1.5.0 --depth 1 \
+        https://github.com/apache/age.git /tmp/age \
+    && cd /tmp/age \
+    && make PG_CONFIG=/usr/pgsql-16/bin/pg_config -j"$(nproc)" \
+    && ( make PG_CONFIG=/usr/pgsql-16/bin/pg_config install 2>/dev/null \
+         || ( cp age.so /usr/pgsql-16/lib/ \
+              && cp age.control age--*.sql /usr/pgsql-16/share/extension/ ) )
+
+
+FROM quay.io/centos/centos:stream9
+
+RUN dnf install -y --nogpgcheck \
+        https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm \
+    && dnf install -y --nobest --nogpgcheck \
+        postgresql16-server \
+        postgresql16 \
+    && dnf clean all
+
+# Copy AGE extension from builder
+COPY --from=builder /usr/pgsql-16/lib/age.so /usr/pgsql-16/lib/age.so
+COPY --from=builder /usr/pgsql-16/share/extension/age* /usr/pgsql-16/share/extension/
+
+ENV PATH=/usr/pgsql-16/bin:$PATH \
+    PGDATA=/var/lib/pgsql/data
+
+RUN useradd -r -m -d /var/lib/pgsql -s /bin/bash postgres || true
+
+COPY <<'ENTRYPOINT' /docker-entrypoint.sh
+#!/bin/bash
+set -e
+export PATH=/usr/pgsql-16/bin:$PATH
+export PGDATA=${PGDATA:-/var/lib/pgsql/data}
+
+PG="runuser -u postgres --"
+
+if [ ! -f "$PGDATA/PG_VERSION" ]; then
+    chown postgres:postgres "$PGDATA"
+    $PG initdb -D "$PGDATA"
+
+    cat > "$PGDATA/pg_hba.conf" <<'HBA'
+local all all trust
+host all all 127.0.0.1/32 trust
+host all all 0.0.0.0/0 md5
+host all all ::0/0 md5
+HBA
+
+    $PG pg_ctl -D "$PGDATA" start -w -o '-c listen_addresses=localhost'
+
+    $PG psql -c "CREATE USER ${POSTGRESQL_USER:-inventoryview} WITH PASSWORD '${POSTGRESQL_PASSWORD:-inventoryview}';"
+    $PG psql -c "CREATE DATABASE ${POSTGRESQL_DATABASE:-inventoryview} OWNER ${POSTGRESQL_USER:-inventoryview};"
+    $PG psql -d "${POSTGRESQL_DATABASE:-inventoryview}" -c 'CREATE EXTENSION IF NOT EXISTS age;'
+    $PG psql -d "${POSTGRESQL_DATABASE:-inventoryview}" -c "GRANT USAGE ON SCHEMA ag_catalog TO ${POSTGRESQL_USER:-inventoryview};"
+    $PG psql -d "${POSTGRESQL_DATABASE:-inventoryview}" -c "GRANT ALL ON ALL TABLES IN SCHEMA ag_catalog TO ${POSTGRESQL_USER:-inventoryview};"
+
+    $PG pg_ctl -D "$PGDATA" stop -w
+fi
+
+exec $PG postgres -D "$PGDATA" -c listen_addresses='*' -c shared_preload_libraries='age'
+ENTRYPOINT
+RUN chmod +x /docker-entrypoint.sh
+
+EXPOSE 5432
+
+CMD ["/docker-entrypoint.sh"]

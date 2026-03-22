@@ -1,0 +1,21 @@
+# Lightweight dev image — Python only (DB runs separately in compose)
+FROM registry.access.redhat.com/ubi9/python-312
+
+WORKDIR /app
+
+# Copy and install as root, then switch back
+USER 0
+
+COPY pyproject.toml ./
+COPY src/ ./src/
+COPY alembic.ini ./
+COPY alembic/ ./alembic/
+
+RUN pip install --no-cache-dir -e . \
+    && pip install --no-cache-dir uvicorn[standard]
+
+USER 1001
+
+EXPOSE 8080
+
+CMD ["uvicorn", "inventoryview.main:app", "--host", "0.0.0.0", "--port", "8080"]

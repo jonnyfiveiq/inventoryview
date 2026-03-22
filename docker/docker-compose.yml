@@ -1,0 +1,40 @@
+services:
+  db:
+    image: localhost/inventoryview-db:latest
+    environment:
+      POSTGRESQL_USER: inventoryview
+      POSTGRESQL_PASSWORD: inventoryview
+      POSTGRESQL_DATABASE: inventoryview
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/pgsql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventoryview -d inventoryview"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    image: localhost/inventoryview-backend:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      IV_DATABASE_URL: postgresql://inventoryview:inventoryview@db:5432/inventoryview
+      IV_VAULT_PASSPHRASE: dev-passphrase
+    command: >
+      sh -c "cd /app && alembic upgrade head &&
+      uvicorn inventoryview.main:app
+      --host 0.0.0.0
+      --port 8080
+      --reload
+      --reload-dir /app/src"
+    volumes:
+      - ../backend/src:/app/src
+      - ../backend/alembic/versions:/app/alembic/versions
+
+volumes:
+  pgdata:
