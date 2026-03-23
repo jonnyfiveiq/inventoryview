@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import type { Resource } from "@/api/types";
 
 interface HeatmapStripProps {
@@ -85,9 +86,18 @@ export default function HeatmapStrip({ resources }: HeatmapStripProps) {
               const intensity = count / maxTypeCount;
               const baseColor = categoryColors[category] || "#6b7280";
               return (
-                <div key={type} className="relative group">
+                <div
+                  key={type}
+                  className="relative group cursor-pointer"
+                  onClick={() => {
+                    const el = document.getElementById(`type-${type}`);
+                    if (el) {
+                      el.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                  }}
+                >
                   <div
-                    className="h-10 rounded flex items-center justify-center gap-1.5 px-3 min-w-[80px] border"
+                    className="h-10 rounded flex items-center justify-center gap-1.5 px-3 min-w-[80px] border hover:brightness-125 transition-all"
                     style={{
                       backgroundColor: baseColor + opacityHex(0.15 + intensity * 0.45),
                       borderColor: baseColor + opacityHex(0.3 + intensity * 0.4),
@@ -117,7 +127,11 @@ export default function HeatmapStrip({ resources }: HeatmapStripProps) {
             {byVendor.map(([vendor, count]) => {
               const pct = (count / resources.length) * 100;
               return (
-                <div key={vendor} className="flex items-center gap-2">
+                <Link
+                  key={vendor}
+                  to={`/providers/${vendor}`}
+                  className="flex items-center gap-2 hover:bg-surface-hover rounded px-1 -mx-1 transition-colors"
+                >
                   <span className="text-xs text-text-muted w-16 truncate capitalize">
                     {vendor}
                   </span>
@@ -133,7 +147,7 @@ export default function HeatmapStrip({ resources }: HeatmapStripProps) {
                   <span className="text-xs font-medium text-text w-8 text-right">
                     {count}
                   </span>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -148,7 +162,11 @@ export default function HeatmapStrip({ resources }: HeatmapStripProps) {
             {byState.map(([state, count]) => {
               const pct = (count / resources.length) * 100;
               return (
-                <div key={state} className="flex items-center gap-2">
+                <Link
+                  key={state}
+                  to="/analytics"
+                  className="flex items-center gap-2 hover:bg-surface-hover rounded px-1 -mx-1 transition-colors"
+                >
                   <span
                     className="w-2 h-2 rounded-full shrink-0"
                     style={{ backgroundColor: stateColor(state) }}
@@ -162,7 +180,7 @@ export default function HeatmapStrip({ resources }: HeatmapStripProps) {
                   <span className="text-[10px] text-text-dim w-10 text-right">
                     {pct.toFixed(0)}%
                   </span>
-                </div>
+                </Link>
               );
             })}
           </div>

@@ -44,7 +44,7 @@ export default function ResourceCarousel({ type, resources }: ResourceCarouselPr
   const label = typeLabels[type] || type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (
-    <div className="mb-6">
+    <div id={`type-${type}`} className="mb-6 scroll-mt-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <h2 className="text-base font-semibold text-text">{label}</h2>
