@@ -97,14 +97,16 @@ if [ "$IV_SEED_ON_BOOT" = "true" ] && [ ! -f "$SEED_MARKER" ]; then
     # Run the seed script
     export SEED_BASE_URL="http://127.0.0.1:8080/api/v1"
     export SEED_PASSWORD
-    /app/seed_test_data.sh --vendor=all || dim "[inventoryview] Seeding encountered errors (non-fatal)"
+    if /app/seed_test_data.sh --vendor=all; then
+        touch "$SEED_MARKER"
+        green "[inventoryview] Demo data seeded successfully."
+    else
+        dim "[inventoryview] Seeding encountered errors — will retry on next boot"
+    fi
 
     # Stop the temporary uvicorn
     kill "$UVICORN_PID" 2>/dev/null || true
     wait "$UVICORN_PID" 2>/dev/null || true
-
-    touch "$SEED_MARKER"
-    green "[inventoryview] Demo data seeded successfully."
 else
     if [ -f "$SEED_MARKER" ]; then
         dim "[inventoryview] Demo data already seeded (skipping)."

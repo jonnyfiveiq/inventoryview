@@ -60,7 +60,8 @@ RUN dnf install -y --nogpgcheck \
         python3.12-pip \
         curl \
         jq \
-    && dnf clean all
+    && dnf clean all \
+    && ln -sf /usr/bin/python3.12 /usr/bin/python3
 
 # Copy AGE extension artifacts from builder
 COPY --from=age-builder /usr/pgsql-16/lib/age.so \
