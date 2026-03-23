@@ -19,28 +19,18 @@ function formatType(ntype: string): string {
 }
 
 export default function HeatmapStrip({ resources }: HeatmapStripProps) {
-  const { byType, byVendor, byState, recentCount } = useMemo(() => {
+  const { byType, byVendor, recentCount } = useMemo(() => {
     const typeCounts: Record<string, { count: number; category: string }> = {};
     const vendorCounts: Record<string, number> = {};
-    const stateCounts: Record<string, number> = {};
     let recent = 0;
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
 
     for (const r of resources) {
-      // By normalised_type
       if (!typeCounts[r.normalised_type]) {
         typeCounts[r.normalised_type] = { count: 0, category: r.category };
       }
       typeCounts[r.normalised_type].count++;
-
-      // By vendor
       vendorCounts[r.vendor] = (vendorCounts[r.vendor] || 0) + 1;
-
-      // By state
-      const state = r.state || "unknown";
-      stateCounts[state] = (stateCounts[state] || 0) + 1;
-
-      // Recently discovered
       if (r.first_seen && new Date(r.first_seen).getTime() > oneDayAgo) {
         recent++;
       }
@@ -51,7 +41,6 @@ export default function HeatmapStrip({ resources }: HeatmapStripProps) {
         .map(([type, { count, category }]) => ({ type, count, category }))
         .sort((a, b) => b.count - a.count),
       byVendor: Object.entries(vendorCounts).sort((a, b) => b[1] - a[1]),
-      byState: Object.entries(stateCounts).sort((a, b) => b[1] - a[1]),
       recentCount: recent,
     };
   }, [resources]);
@@ -75,7 +64,7 @@ export default function HeatmapStrip({ resources }: HeatmapStripProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_auto] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6">
         {/* Resource type heatmap grid */}
         <div>
           <div className="text-[10px] text-text-dim uppercase tracking-wider mb-2">
@@ -153,38 +142,6 @@ export default function HeatmapStrip({ resources }: HeatmapStripProps) {
           </div>
         </div>
 
-        {/* State breakdown */}
-        <div className="min-w-[140px]">
-          <div className="text-[10px] text-text-dim uppercase tracking-wider mb-2">
-            By State
-          </div>
-          <div className="space-y-1.5">
-            {byState.map(([state, count]) => {
-              const pct = (count / resources.length) * 100;
-              return (
-                <Link
-                  key={state}
-                  to="/analytics"
-                  className="flex items-center gap-2 hover:bg-surface-hover rounded px-1 -mx-1 transition-colors"
-                >
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: stateColor(state) }}
-                  />
-                  <span className="text-xs text-text-muted w-20 truncate">
-                    {state}
-                  </span>
-                  <span className="text-xs font-medium text-text w-8 text-right">
-                    {count}
-                  </span>
-                  <span className="text-[10px] text-text-dim w-10 text-right">
-                    {pct.toFixed(0)}%
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -208,12 +165,3 @@ function vendorColor(vendor: string): string {
   return vendorColors[vendor.toLowerCase()] || "#6366f1";
 }
 
-function stateColor(state: string): string {
-  const s = state.toLowerCase();
-  if (s.includes("on") || s === "running" || s === "connected") return "#22c55e";
-  if (s.includes("off") || s === "stopped" || s === "disconnected") return "#6b7280";
-  if (s === "maintenance") return "#f59e0b";
-  if (s === "error") return "#ef4444";
-  if (s === "unknown") return "#55556a";
-  return "#8888a0";
-}

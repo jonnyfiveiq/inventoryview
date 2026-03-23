@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Network, GitCompareArrows } from "lucide-react";
 import { useResource, useResourceRelationships, useResourceDriftExists, useAssetChain } from "@/hooks/useResources";
@@ -10,6 +10,8 @@ import DriftCalendar from "@/components/drift/DriftCalendar";
 import AssetChainFlow from "@/components/resource/AssetChainFlow";
 import AddToPlaylistButton from "@/components/playlist/AddToPlaylistButton";
 import ErrorBanner from "@/components/layout/ErrorBanner";
+import AutomationHistory from "@/components/automation/AutomationHistory";
+import { useTracking } from "@/hooks/useTracking";
 import { cn } from "@/lib/utils";
 
 const stateColors: Record<string, string> = {
@@ -23,14 +25,23 @@ const stateColors: Record<string, string> = {
 
 export default function ResourceDetailPage() {
   const { uid } = useParams<{ uid: string }>();
+  const { track } = useTracking();
   const [showGraph, setShowGraph] = useState(false);
   const [showDrift, setShowDrift] = useState(false);
   const [selectedDriftDate, setSelectedDriftDate] = useState<string | undefined>();
+
+  useEffect(() => { track("Resource Browsing", "page_view"); }, [uid]);
 
   const { data: resource, isLoading, error } = useResource(uid!);
   const { data: relationships } = useResourceRelationships(uid!);
   const { data: driftStatus } = useResourceDriftExists(uid!);
   const { data: assetChain } = useAssetChain(uid!);
+
+  useEffect(() => {
+    if (assetChain && assetChain.nodes.length > 1) {
+      track("Asset Linkages", "asset_chain_viewed");
+    }
+  }, [assetChain]);
 
   // Collect unique related resource UIDs to resolve their names
   const relatedUids = useMemo(() => {
@@ -124,7 +135,7 @@ export default function ResourceDetailPage() {
           <AddToPlaylistButton resourceUid={uid!} />
           {driftStatus?.has_drift && (
             <button
-              onClick={() => setShowDrift(true)}
+              onClick={() => { track("Drift Detection", "drift_comparison_viewed"); setShowDrift(true); }}
               className="flex items-center gap-2 px-4 py-2 bg-surface border border-border hover:bg-surface-hover text-text rounded-md transition-colors text-sm"
             >
               <GitCompareArrows className="w-4 h-4 text-state-maintenance" />
@@ -132,7 +143,7 @@ export default function ResourceDetailPage() {
             </button>
           )}
           <button
-            onClick={() => setShowGraph(true)}
+            onClick={() => { track("Graph Visualisation", "graph_overlay_opened"); setShowGraph(true); }}
             className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-md transition-colors text-sm"
           >
             <Network className="w-4 h-4" />
@@ -142,7 +153,7 @@ export default function ResourceDetailPage() {
       </div>
 
       {/* Asset Chain Flow */}
-      {assetChain && (
+      {assetChain && assetChain.nodes.length > 1 && (
         <section className="mb-8">
           <AssetChainFlow
             nodes={assetChain.nodes}
@@ -166,6 +177,9 @@ export default function ResourceDetailPage() {
           />
         </div>
       </section>
+
+      {/* Automation History */}
+      <AutomationHistory resourceUid={uid!} />
 
       {/* Properties table */}
       <section className="mb-8">

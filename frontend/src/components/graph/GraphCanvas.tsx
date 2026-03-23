@@ -13,6 +13,8 @@ const edgeColors: Record<string, string> = {
   ROUTES_TO: "#14b8a6",
   PEERS_WITH: "#ec4899",
   SAME_ASSET: "#f59e0b",
+  AUTOMATED_BY: "#10b981",
+  AUTOMATING: "#10b981",
 };
 
 const categoryColors: Record<string, string> = {
@@ -20,6 +22,7 @@ const categoryColors: Record<string, string> = {
   storage: "#f59e0b",
   network: "#22c55e",
   management: "#a855f7",
+  automation: "#10b981",
 };
 
 /** Map normalised_type to a Cytoscape node shape for visual distinction. */
@@ -34,6 +37,7 @@ const typeShapes: Record<string, string> = {
   resource_pool: "octagon",
   folder: "tag",
   network: "vee",
+  aap_host: "star",
 };
 
 function formatType(ntype: string): string {
@@ -152,6 +156,15 @@ export default function GraphCanvas({
             "text-background-color": "#0a0a0f",
             "text-background-opacity": 0.7,
             "text-background-padding": "2px",
+          } as cytoscape.Css.Edge,
+        },
+        {
+          selector: "edge[edgeType = 'AUTOMATED_BY']",
+          style: {
+            "line-style": "dashed",
+            "line-dash-pattern": [8, 4],
+            width: 2.5,
+            "target-arrow-shape": "triangle",
           } as cytoscape.Css.Edge,
         },
         {

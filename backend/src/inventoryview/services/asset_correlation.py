@@ -375,6 +375,63 @@ async def get_asset_chain(
                     visited.add(b_uid)
                     queue.append(b_uid)
 
+        # Also include AAPHost nodes linked via AUTOMATED_BY edges
+        # Walk from every resource in the chain to find automation links
+        for resource_uid in list(nodes_by_uid.keys()):
+            esc = resource_uid.replace("'", "\\'")
+
+            aap_cypher = (
+                f" MATCH (a:AAPHost)-[r:AUTOMATED_BY]->(res:Resource {{uid: '{esc}'}}) "
+                f"RETURN a.host_id AS host_id, a.hostname AS hostname, "
+                f"a.org_id AS org_id, a.smbios_uuid AS smbios_uuid, "
+                f"a.correlation_type AS ctype, a.total_jobs AS total_jobs, "
+                f"a.total_events AS total_events, "
+                f"a.first_seen AS first_seen, a.last_seen AS last_seen, "
+                f"r.correlation_key AS corr_key, r.inference_method AS method, "
+                f"r.confidence AS confidence "
+            )
+            aap_rows = await execute_cypher(
+                conn, graph_name, aap_cypher,
+                columns="(host_id agtype, hostname agtype, org_id agtype, "
+                        "smbios_uuid agtype, ctype agtype, total_jobs agtype, "
+                        "total_events agtype, first_seen agtype, last_seen agtype, "
+                        "corr_key agtype, method agtype, confidence agtype)",
+            )
+
+            for row in aap_rows:
+                if not isinstance(row, dict):
+                    continue
+                host_id = str(row.get("host_id", "")).strip('"')
+                hostname = str(row.get("hostname", "")).strip('"')
+                method = str(row.get("method", "")).strip('"')
+                corr_key = str(row.get("corr_key", "")).strip('"')
+                confidence = row.get("confidence", 0)
+
+                # Use host_id as the node uid (prefixed to avoid collisions)
+                aap_uid = f"aap:{host_id}"
+                if aap_uid not in nodes_by_uid:
+                    nodes_by_uid[aap_uid] = {
+                        "uid": aap_uid,
+                        "name": hostname,
+                        "vendor": "aap",
+                        "normalised_type": "aap_host",
+                        "category": "automation",
+                        "vendor_type": "AAP::ManagedHost",
+                        "state": "",
+                    }
+
+                edge_key = ":".join(sorted([resource_uid, aap_uid]))
+                if edge_key not in seen_edges:
+                    seen_edges.add(edge_key)
+                    # Use the inference method as the matched_key label
+                    # and the correlation key as the matched_value
+                    edges.append({
+                        "source_uid": aap_uid,
+                        "target_uid": resource_uid,
+                        "matched_key": method,
+                        "matched_value": corr_key,
+                    })
+
     return {
         "nodes": list(nodes_by_uid.values()),
         "edges": edges,

@@ -13,9 +13,12 @@ import {
   Plus,
   Pencil,
   Trash2,
+  Activity,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useTracking } from "@/hooks/useTracking";
 import { useAllResources } from "@/hooks/useResources";
 import { usePlaylists, useCreatePlaylist, useUpdatePlaylist, useDeletePlaylist } from "@/hooks/usePlaylists";
 
@@ -27,11 +30,14 @@ export default function Sidebar({ onSearchClick }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [providersOpen, setProvidersOpen] = useState(true);
   const [playlistsOpen, setPlaylistsOpen] = useState(true);
+  const [automationsOpen, setAutomationsOpen] = useState(true);
+  const [adminOpen, setAdminOpen] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, username } = useAuth();
+  const { track } = useTracking();
   const { data: resourceData } = useAllResources();
   const { data: playlistData } = usePlaylists();
   const createPlaylist = useCreatePlaylist();
@@ -51,6 +57,7 @@ export default function Sidebar({ onSearchClick }: SidebarProps) {
   const playlists = playlistData?.data ?? [];
 
   const handleCreatePlaylist = () => {
+    track("Playlists", "playlist_created");
     createPlaylist.mutate(
       { name: "New Playlist" },
       {
@@ -288,6 +295,116 @@ export default function Sidebar({ onSearchClick }: SidebarProps) {
               </span>
             </Link>
           )
+        )}
+
+        {/* Automations section header */}
+        <div
+          onClick={() => {
+            if (collapsed) {
+              setCollapsed(false);
+              setAutomationsOpen(true);
+            } else {
+              setAutomationsOpen(!automationsOpen);
+            }
+          }}
+          className={cn(
+            "flex items-center w-full px-4 py-2.5 text-sm text-text-muted hover:text-text hover:bg-surface-hover transition-colors cursor-pointer select-none",
+            collapsed && "justify-center"
+          )}
+          title={collapsed ? "Automations" : undefined}
+        >
+          <Activity className="w-5 h-5 shrink-0" />
+          {!collapsed && (
+            <>
+              <span className="ml-3 flex-1 text-left">Automations</span>
+              <ChevronDown
+                className={cn(
+                  "w-4 h-4 ml-1 transition-transform",
+                  !automationsOpen && "-rotate-90"
+                )}
+              />
+            </>
+          )}
+        </div>
+        {automationsOpen && !collapsed && (
+          <>
+            <Link
+              to="/automations"
+              className={cn(
+                "block pl-12 pr-4 py-1.5 text-sm transition-colors border-l border-border ml-8",
+                isActive("/automations")
+                  ? "text-accent"
+                  : "text-text-muted hover:text-text hover:bg-surface-hover"
+              )}
+            >
+              Coverage
+            </Link>
+            <Link
+              to="/automations/upload"
+              className={cn(
+                "block pl-12 pr-4 py-1.5 text-sm transition-colors border-l border-border ml-8",
+                isActive("/automations/upload")
+                  ? "text-accent"
+                  : "text-text-muted hover:text-text hover:bg-surface-hover"
+              )}
+            >
+              Upload
+            </Link>
+            <Link
+              to="/automations/review"
+              className={cn(
+                "block pl-12 pr-4 py-1.5 text-sm transition-colors border-l border-border ml-8",
+                isActive("/automations/review")
+                  ? "text-accent"
+                  : "text-text-muted hover:text-text hover:bg-surface-hover"
+              )}
+            >
+              Review Queue
+            </Link>
+          </>
+        )}
+
+        {/* Administration section header */}
+        <div
+          onClick={() => {
+            if (collapsed) {
+              setCollapsed(false);
+              setAdminOpen(true);
+            } else {
+              setAdminOpen(!adminOpen);
+            }
+          }}
+          className={cn(
+            "flex items-center w-full px-4 py-2.5 text-sm text-text-muted hover:text-text hover:bg-surface-hover transition-colors cursor-pointer select-none",
+            collapsed && "justify-center"
+          )}
+          title={collapsed ? "Administration" : undefined}
+        >
+          <Settings className="w-5 h-5 shrink-0" />
+          {!collapsed && (
+            <>
+              <span className="ml-3 flex-1 text-left">Administration</span>
+              <ChevronDown
+                className={cn(
+                  "w-4 h-4 ml-1 transition-transform",
+                  !adminOpen && "-rotate-90"
+                )}
+              />
+            </>
+          )}
+        </div>
+        {adminOpen && !collapsed && (
+          <Link
+            to="/admin/usage"
+            className={cn(
+              "block pl-12 pr-4 py-1.5 text-sm transition-colors border-l border-border ml-8",
+              isActive("/admin/usage")
+                ? "text-accent"
+                : "text-text-muted hover:text-text hover:bg-surface-hover"
+            )}
+          >
+            Usage
+          </Link>
         )}
 
         <NavItem

@@ -1,18 +1,23 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Boxes, ListMusic } from "lucide-react";
 import { useAllResources } from "@/hooks/useResources";
 import { usePlaylists } from "@/hooks/usePlaylists";
+import { useTracking } from "@/hooks/useTracking";
 import ResourceCarousel from "@/components/carousel/ResourceCarousel";
 import VendorCarousel from "@/components/carousel/VendorCarousel";
 import HeatmapStrip from "@/components/heatmap/HeatmapStrip";
 import DriftCalendar from "@/components/drift/DriftCalendar";
 import ErrorBanner from "@/components/layout/ErrorBanner";
+import AutomationCoverage from "@/components/automation/AutomationCoverage";
 import type { Resource } from "@/api/types";
 
 export default function LandingPage() {
+  const { track } = useTracking();
   const { data, isLoading, error, refetch } = useAllResources();
   const { data: playlistData } = usePlaylists();
+
+  useEffect(() => { track("Resource Browsing", "page_view"); }, []);
   const playlists = playlistData?.data ?? [];
 
   const groupedByType = useMemo(() => {
@@ -76,6 +81,9 @@ export default function LandingPage() {
         <div className="bg-surface border border-border rounded-lg p-4">
           <DriftCalendar mode="fleet" />
         </div>
+      </div>
+      <div className="mt-6">
+        <AutomationCoverage />
       </div>
       <div className="mt-6">
         <VendorCarousel resources={data.data} />

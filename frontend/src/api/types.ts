@@ -227,3 +227,176 @@ export interface PlaylistActivityTimelineResponse {
   data: PlaylistActivityTimelineDay[];
   total_activity_count: number;
 }
+
+// --- AAP Automation Correlation ---
+
+export interface AAPHostItem {
+  id: string;
+  host_id: string;
+  hostname: string;
+  smbios_uuid: string | null;
+  org_id: string;
+  inventory_id: string;
+  first_seen: string;
+  last_seen: string;
+  total_jobs: number;
+  total_events: number;
+  correlation_type: string;
+  correlation_status: string;
+  match_score: number | null;
+  match_reason: string | null;
+  correlated_resource: {
+    uid: string;
+    name: string;
+    vendor: string;
+    normalised_type: string;
+  } | null;
+}
+
+export interface AAPHostListResponse {
+  items: AAPHostItem[];
+  next_cursor: string | null;
+  total_count: number;
+}
+
+export interface UploadCorrelationSummary {
+  auto_matched: number;
+  pending_review: number;
+  unmatched: number;
+}
+
+export interface UploadResponse {
+  import_id: string;
+  source_label: string;
+  hosts_imported: number;
+  hosts_updated: number;
+  jobs_imported: number;
+  events_counted: number;
+  indirect_nodes_imported: number;
+  correlation_summary: UploadCorrelationSummary | null;
+}
+
+export interface PendingMatchItem {
+  id: string;
+  aap_host: {
+    id: string;
+    host_id: string;
+    hostname: string;
+    smbios_uuid: string | null;
+    total_jobs: number;
+  };
+  suggested_resource: {
+    uid: string;
+    name: string;
+    vendor: string;
+    normalised_type: string;
+  } | null;
+  match_score: number;
+  match_reason: string;
+  status: string;
+  created_at: string;
+}
+
+export interface PendingMatchListResponse {
+  items: PendingMatchItem[];
+  next_cursor: string | null;
+  total_count: number;
+}
+
+export interface ReviewAction {
+  pending_match_id: string;
+  action: "approve" | "reject" | "ignore";
+  override_resource_uid?: string | null;
+}
+
+export interface ReviewResponse {
+  processed: number;
+  results: {
+    pending_match_id: string;
+    action: string;
+    success: boolean;
+    learned_mapping_created: boolean;
+    error?: string | null;
+  }[];
+}
+
+export interface ProviderCoverage {
+  vendor: string;
+  total: number;
+  automated: number;
+  coverage_percentage: number;
+}
+
+export interface CoverageResponse {
+  total_resources: number;
+  automated_resources: number;
+  coverage_percentage: number;
+  by_provider: ProviderCoverage[];
+  top_automated: {
+    resource_uid: string;
+    resource_name: string;
+    vendor: string;
+    total_jobs: number;
+    last_automated: string;
+  }[];
+  recent_imports: {
+    source_label: string;
+    imported_at: string;
+    hosts_count: number;
+  }[];
+}
+
+export interface JobExecutionItem {
+  job_id: string;
+  job_name: string;
+  ok: number;
+  changed: number;
+  failures: number;
+  dark: number;
+  skipped: number;
+  project: string | null;
+  org_name: string | null;
+  correlation_type: string;
+  executed_at: string;
+}
+
+export interface HistoryResponse {
+  resource_uid: string;
+  first_automated: string | null;
+  last_automated: string | null;
+  total_jobs: number;
+  aap_hosts: {
+    hostname: string;
+    correlation_type: string;
+    match_reason: string | null;
+  }[];
+  executions: {
+    items: JobExecutionItem[];
+    next_cursor: string | null;
+    total_count: number;
+  };
+}
+
+export interface AutomationGraphNode {
+  id: string;
+  label: string;
+  type: string;
+  vendor?: string | null;
+  normalised_type?: string | null;
+  correlation_type?: string | null;
+  total_jobs?: number | null;
+}
+
+export interface AutomationGraphEdge {
+  source: string;
+  target: string;
+  type: string;
+  confidence?: number | null;
+  correlation_type?: string | null;
+  inference_method?: string | null;
+}
+
+export interface AutomationGraphResponse {
+  nodes: AutomationGraphNode[];
+  edges: AutomationGraphEdge[];
+}

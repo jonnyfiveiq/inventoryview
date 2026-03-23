@@ -21,7 +21,7 @@ bold()  { printf '\033[1m%s\033[0m\n' "$*"; }
 dim()   { printf '\033[2m%s\033[0m\n' "$*"; }
 
 usage() {
-    echo "Usage: $0 --vendor=<vmware|aws|azure|openshift|all> [--clean]"
+    echo "Usage: $0 --vendor=<vmware|aws|azure|openshift|aap|all> [--clean]"
     echo ""
     echo "Options:"
     echo "  --vendor=VENDOR   Which vendor dataset to seed (required)"
@@ -391,7 +391,7 @@ seed_vmware() {
         "normalised_type": "virtual_machine",
         "category": "compute",
         "state": "poweredOn",
-        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 4, "memory_mb": 8192, "disk_gb": 100, "ip_address": "10.100.1.10", "tools_status": "toolsOk", "annotation": "Production web tier"}
+        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 4, "memory_mb": 8192, "disk_gb": 100, "ip_address": "10.100.1.10", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440001", "annotation": "Production web tier"}
     }'
     create_resource '{
         "name": "rhel9-webserver-02",
@@ -401,7 +401,7 @@ seed_vmware() {
         "normalised_type": "virtual_machine",
         "category": "compute",
         "state": "poweredOn",
-        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 4, "memory_mb": 8192, "disk_gb": 100, "ip_address": "10.100.1.11", "tools_status": "toolsOk", "annotation": "Production web tier"}
+        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 4, "memory_mb": 8192, "disk_gb": 100, "ip_address": "10.100.1.11", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440002", "annotation": "Production web tier"}
     }'
     create_resource '{
         "name": "rhel9-db-primary",
@@ -411,7 +411,7 @@ seed_vmware() {
         "normalised_type": "virtual_machine",
         "category": "compute",
         "state": "poweredOn",
-        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 500, "ip_address": "10.200.1.10", "tools_status": "toolsOk", "annotation": "PostgreSQL primary"}
+        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 500, "ip_address": "10.200.1.10", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440003", "annotation": "PostgreSQL primary"}
     }'
     create_resource '{
         "name": "rhel9-db-replica",
@@ -421,7 +421,7 @@ seed_vmware() {
         "normalised_type": "virtual_machine",
         "category": "compute",
         "state": "poweredOn",
-        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 500, "ip_address": "10.200.1.11", "tools_status": "toolsOk", "annotation": "PostgreSQL streaming replica"}
+        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 500, "ip_address": "10.200.1.11", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440004", "annotation": "PostgreSQL streaming replica"}
     }'
     create_resource '{
         "name": "aap-controller-01",
@@ -431,7 +431,7 @@ seed_vmware() {
         "normalised_type": "virtual_machine",
         "category": "compute",
         "state": "poweredOn",
-        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 4, "memory_mb": 16384, "disk_gb": 200, "ip_address": "10.100.1.50", "tools_status": "toolsOk", "annotation": "Ansible Automation Platform Controller"}
+        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 4, "memory_mb": 16384, "disk_gb": 200, "ip_address": "10.100.1.50", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440005", "annotation": "Ansible Automation Platform Controller"}
     }'
     create_resource '{
         "name": "aap-hub-01",
@@ -441,7 +441,7 @@ seed_vmware() {
         "normalised_type": "virtual_machine",
         "category": "compute",
         "state": "poweredOn",
-        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 4, "memory_mb": 16384, "disk_gb": 200, "ip_address": "10.100.1.51", "tools_status": "toolsOk", "annotation": "Ansible Automation Platform Private Hub"}
+        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 4, "memory_mb": 16384, "disk_gb": 200, "ip_address": "10.100.1.51", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440006", "annotation": "Ansible Automation Platform Private Hub"}
     }'
     create_resource '{
         "name": "satellite-01",
@@ -451,7 +451,7 @@ seed_vmware() {
         "normalised_type": "virtual_machine",
         "category": "compute",
         "state": "poweredOn",
-        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 4, "memory_mb": 24576, "disk_gb": 500, "ip_address": "10.300.1.10", "tools_status": "toolsOk", "annotation": "Red Hat Satellite 6.15"}
+        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 4, "memory_mb": 24576, "disk_gb": 500, "ip_address": "10.300.1.10", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440007", "annotation": "Red Hat Satellite 6.15"}
     }'
     create_resource '{
         "name": "idm-01",
@@ -461,7 +461,7 @@ seed_vmware() {
         "normalised_type": "virtual_machine",
         "category": "compute",
         "state": "poweredOn",
-        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 2, "memory_mb": 4096, "disk_gb": 50, "ip_address": "10.300.1.20", "tools_status": "toolsOk", "annotation": "Red Hat IdM / FreeIPA"}
+        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 2, "memory_mb": 4096, "disk_gb": 50, "ip_address": "10.300.1.20", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440008", "annotation": "Red Hat IdM / FreeIPA"}
     }'
     create_resource '{
         "name": "dev-rhel9-testbed",
@@ -471,7 +471,7 @@ seed_vmware() {
         "normalised_type": "virtual_machine",
         "category": "compute",
         "state": "poweredOn",
-        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 2, "memory_mb": 4096, "disk_gb": 80, "ip_address": "10.400.1.10", "tools_status": "toolsOk", "annotation": "Dev test VM"}
+        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 2, "memory_mb": 4096, "disk_gb": 80, "ip_address": "10.400.1.10", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440009", "annotation": "Dev test VM"}
     }'
     create_resource '{
         "name": "win2022-legacy-app",
@@ -2015,6 +2015,198 @@ for item in data.get('data', []):
     green "  Playlists created: $PLAYLIST_CREATED"
 }
 
+# ---------- AAP Automation seed data ----------
+# Generates a synthetic AAP metrics utility archive (ZIP) containing CSV files
+# with realistic AAP hosts that use DNS-style hostnames (short, FQDN, partial FQDN)
+# pointing to the same underlying VMs. canonical_facts include SMBIOS UUIDs
+# that match the VMware VMs' raw_properties.smbios_uuid for Tier 2 correlation.
+
+seed_aap() {
+    bold "=== Seeding AAP Automation Metrics ==="
+    echo ""
+
+    AAP_CREATED=0
+
+    # Create a temp directory for the synthetic archive
+    AAP_TMPDIR=$(mktemp -d)
+    AAP_DATADIR="$AAP_TMPDIR/data/2026/03/22"
+    mkdir -p "$AAP_DATADIR"
+
+    # ---------- main_host CSV ----------
+    # Demonstrates the key deduplication problem: the same machine appears as
+    # multiple AAP hosts with different DNS hostnames (short, partial FQDN,
+    # full FQDN). The canonical_facts.ansible_machine_id contains the SMBIOS UUID
+    # which links all hostname variants back to the parent VM.
+    #
+    # Hosts include:
+    # - rhel9-webserver-01 variants (3 hostnames -> 1 VM via SMBIOS 550e8400...0001)
+    # - rhel9-webserver-02 variants (3 hostnames -> 1 VM via SMBIOS 550e8400...0002)
+    # - rhel9-db-primary variants (2 hostnames -> 1 VM via SMBIOS 550e8400...0003)
+    # - rhel9-db-replica (exact match -> VM via SMBIOS 550e8400...0004)
+    # - aap-controller-01 (exact match -> VM via SMBIOS 550e8400...0005)
+    # - satellite-01 variants (2 hostnames -> 1 VM via SMBIOS 550e8400...0007)
+    # - idm-01 variant (1 FQDN -> VM via SMBIOS 550e8400...0008)
+    # - dev-rhel9-testbed (exact match -> VM via SMBIOS 550e8400...0009)
+    # - mystery-server-42 (no matching VM -> goes to pending review)
+    # - legacy-app.corp.local (no matching VM, no SMBIOS -> partial match only)
+
+    cat > "$AAP_DATADIR/main_host_20260322.csv" << 'CSVEOF'
+collection_timestamp: 2026-03-22T00:00:00Z
+aap_version: 2.5.1
+id,hostname,canonical_facts,org_id,inventory_id
+1001,rhel9-webserver-01,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01"", ""ansible_domain"": ""lab.rdu.redhat.com"", ""ansible_default_ipv4"": {""address"": ""10.100.1.10""}}",1,1
+1002,rhel9-webserver-01.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01""}",1,2
+1003,rhel9-webserver-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com""}",1,3
+1004,rhel9-webserver-02,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002"", ""ansible_fqdn"": ""rhel9-webserver-02.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-02"", ""ansible_default_ipv4"": {""address"": ""10.100.1.11""}}",1,1
+1005,rhel9-webserver-02.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002""}",1,2
+1006,rhel9-webserver-02.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002""}",1,3
+1007,rhel9-db-primary,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440003"", ""ansible_fqdn"": ""rhel9-db-primary.lab.rdu.redhat.com"", ""ansible_default_ipv4"": {""address"": ""10.200.1.10""}}",1,1
+1008,rhel9-db-primary.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440003""}",1,1
+1009,rhel9-db-replica,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440004"", ""ansible_fqdn"": ""rhel9-db-replica.lab.rdu.redhat.com"", ""ansible_default_ipv4"": {""address"": ""10.200.1.11""}}",1,1
+1010,aap-controller-01,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440005"", ""ansible_fqdn"": ""aap-controller-01.lab.rdu.redhat.com""}",1,1
+1011,satellite-01,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440007"", ""ansible_fqdn"": ""satellite-01.lab.rdu.redhat.com""}",1,1
+1012,satellite-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440007""}",1,2
+1013,idm-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440008"", ""ansible_fqdn"": ""idm-01.lab.rdu.redhat.com""}",1,1
+1014,dev-rhel9-testbed,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440009""}",1,1
+1015,mystery-server-42,"{""ansible_machine_id"": ""aaaabbbb-cccc-dddd-eeee-ffffffffffff""}",1,4
+1016,legacy-app.corp.local,"{}",1,5
+CSVEOF
+
+    # ---------- job_host_summary CSV ----------
+    # Each job execution is tied to a host_id from main_host above.
+    # Demonstrates: multiple hostnames for the same machine each have separate job runs,
+    # showing the deduplication challenge. The correlation engine should recognise that
+    # host_ids 1001, 1002, 1003 all map to the same VM (via SMBIOS UUID).
+
+    cat > "$AAP_DATADIR/job_host_summary_20260322.csv" << 'CSVEOF'
+collection_timestamp: 2026-03-22T00:00:00Z
+aap_version: 2.5.1
+host_id,job_id,job_name,ok,changed,failures,dark,skipped,project,org_name,inventory_name,created
+1001,5001,Patch RHEL Servers,12,3,0,0,2,linux-patching,ACME Corp,Production,2026-03-20T10:00:00Z
+1001,5002,Security Hardening,8,2,0,0,1,security-baseline,ACME Corp,Production,2026-03-20T11:00:00Z
+1001,5003,Deploy Nginx Config,5,1,0,0,0,webserver-config,ACME Corp,Production,2026-03-21T09:00:00Z
+1002,5004,Compliance Audit,15,0,0,0,3,compliance-scans,ACME Corp,Compliance Inv,2026-03-19T14:00:00Z
+1003,5005,Certificate Renewal,4,1,0,0,0,cert-management,ACME Corp,Lab Inventory,2026-03-18T08:00:00Z
+1004,5006,Patch RHEL Servers,12,3,0,0,2,linux-patching,ACME Corp,Production,2026-03-20T10:05:00Z
+1004,5007,Security Hardening,8,2,0,0,1,security-baseline,ACME Corp,Production,2026-03-20T11:05:00Z
+1005,5008,Compliance Audit,15,0,0,0,3,compliance-scans,ACME Corp,Compliance Inv,2026-03-19T14:05:00Z
+1006,5009,Certificate Renewal,4,1,0,0,0,cert-management,ACME Corp,Lab Inventory,2026-03-18T08:05:00Z
+1007,5010,PostgreSQL Backup,6,2,0,0,0,database-ops,ACME Corp,Production,2026-03-21T02:00:00Z
+1007,5011,PostgreSQL Vacuum,3,1,0,0,0,database-ops,ACME Corp,Production,2026-03-21T03:00:00Z
+1007,5012,Patch RHEL Servers,12,3,0,0,2,linux-patching,ACME Corp,Production,2026-03-20T10:10:00Z
+1008,5013,PostgreSQL Health Check,10,0,0,0,0,database-ops,ACME Corp,Production,2026-03-21T06:00:00Z
+1009,5014,PostgreSQL Backup,6,2,0,0,0,database-ops,ACME Corp,Production,2026-03-21T02:05:00Z
+1009,5015,Patch RHEL Servers,12,3,0,0,2,linux-patching,ACME Corp,Production,2026-03-20T10:15:00Z
+1010,5016,AAP Controller Backup,8,4,0,0,0,aap-maintenance,ACME Corp,Management,2026-03-21T01:00:00Z
+1010,5017,Patch RHEL Servers,12,3,0,0,2,linux-patching,ACME Corp,Management,2026-03-20T10:20:00Z
+1011,5018,Satellite Content Sync,20,5,0,0,1,satellite-ops,ACME Corp,Management,2026-03-21T04:00:00Z
+1011,5019,Patch RHEL Servers,12,3,0,0,2,linux-patching,ACME Corp,Management,2026-03-20T10:25:00Z
+1012,5020,Satellite Health Check,10,0,0,0,0,satellite-ops,ACME Corp,Lab Inventory,2026-03-21T05:00:00Z
+1013,5021,IdM User Sync,6,2,0,0,0,identity-ops,ACME Corp,Management,2026-03-21T07:00:00Z
+1013,5022,Patch RHEL Servers,12,3,0,0,2,linux-patching,ACME Corp,Management,2026-03-20T10:30:00Z
+1014,5023,Dev Environment Setup,15,8,1,0,3,dev-provisioning,ACME Corp,Development,2026-03-19T16:00:00Z
+1014,5024,Patch RHEL Servers,12,3,0,0,2,linux-patching,ACME Corp,Development,2026-03-20T10:35:00Z
+1015,5025,Patch RHEL Servers,12,3,0,0,2,linux-patching,ACME Corp,Unknown,2026-03-20T10:40:00Z
+1015,5026,Security Hardening,8,2,1,0,1,security-baseline,ACME Corp,Unknown,2026-03-20T11:40:00Z
+1016,5027,Legacy App Restart,3,1,2,1,0,legacy-maintenance,ACME Corp,Legacy,2026-03-15T22:00:00Z
+CSVEOF
+
+    # ---------- main_jobevent CSV ----------
+    # A subset of events for selected hosts to populate event counts.
+
+    cat > "$AAP_DATADIR/main_jobevent_20260322.csv" << 'CSVEOF'
+collection_timestamp: 2026-03-22T00:00:00Z
+aap_version: 2.5.1
+host_id,event,event_data,created
+1001,runner_on_ok,"{""task"": ""Install packages""}",2026-03-20T10:00:10Z
+1001,runner_on_ok,"{""task"": ""Start service""}",2026-03-20T10:00:20Z
+1001,runner_on_changed,"{""task"": ""Update config""}",2026-03-20T10:00:30Z
+1004,runner_on_ok,"{""task"": ""Install packages""}",2026-03-20T10:05:10Z
+1004,runner_on_ok,"{""task"": ""Start service""}",2026-03-20T10:05:20Z
+1004,runner_on_changed,"{""task"": ""Update config""}",2026-03-20T10:05:30Z
+1007,runner_on_ok,"{""task"": ""Backup database""}",2026-03-21T02:00:10Z
+1007,runner_on_changed,"{""task"": ""Rotate WAL""}",2026-03-21T02:00:20Z
+1009,runner_on_ok,"{""task"": ""Backup database""}",2026-03-21T02:05:10Z
+1010,runner_on_ok,"{""task"": ""Backup controller""}",2026-03-21T01:00:10Z
+1010,runner_on_changed,"{""task"": ""Export credentials""}",2026-03-21T01:00:20Z
+1010,runner_on_changed,"{""task"": ""Archive DB""}",2026-03-21T01:00:30Z
+1010,runner_on_changed,"{""task"": ""Copy to NFS""}",2026-03-21T01:00:40Z
+1011,runner_on_ok,"{""task"": ""Sync repos""}",2026-03-21T04:00:10Z
+1011,runner_on_changed,"{""task"": ""Publish CV""}",2026-03-21T04:00:20Z
+1013,runner_on_ok,"{""task"": ""Sync users""}",2026-03-21T07:00:10Z
+1013,runner_on_changed,"{""task"": ""Sync groups""}",2026-03-21T07:00:20Z
+1015,runner_on_ok,"{""task"": ""Install packages""}",2026-03-20T10:40:10Z
+1015,runner_on_failed,"{""task"": ""Check connectivity""}",2026-03-20T10:40:20Z
+1016,runner_on_failed,"{""task"": ""Restart service""}",2026-03-15T22:00:10Z
+1016,runner_on_unreachable,"{""task"": ""Check service""}",2026-03-15T22:00:20Z
+CSVEOF
+
+    # ---------- main_indirectmanagednodeaudit CSV ----------
+    # Indirect managed nodes — nodes targeted by automation but not directly
+    # in the inventory. E.g., network switches automated via a jump host.
+
+    cat > "$AAP_DATADIR/main_indirectmanagednodeaudit_20260322.csv" << 'CSVEOF'
+collection_timestamp: 2026-03-22T00:00:00Z
+aap_version: 2.5.1
+hostname,managed_type,unique_identifier,org_id
+switch-tor-01.lab.rdu.redhat.com,network_device,,1
+switch-tor-02.lab.rdu.redhat.com,network_device,,1
+fw-perimeter-01.lab.rdu.redhat.com,network_device,,1
+CSVEOF
+
+    # Build the ZIP archive
+    AAP_ZIP="$AAP_TMPDIR/aap_metrics_seed.zip"
+    (cd "$AAP_TMPDIR" && zip -rq "$AAP_ZIP" data/)
+
+    # Upload via the automation endpoint
+    bold "Uploading AAP metrics archive..."
+    api POST /automations/upload "${AUTH[@]}" \
+        -F "file=@${AAP_ZIP};filename=aap_metrics_seed.zip" \
+        -F "source_label=seed-data-lab-rdu"
+
+    if [ "$STATUS" -eq 200 ] || [ "$STATUS" -eq 201 ]; then
+        local hosts_imported jobs_imported events_counted auto_matched pending_review unmatched
+        hosts_imported=$(python3 -c "import sys,json; print(json.load(sys.stdin).get('hosts_imported',0))" < "$BODY_FILE" 2>/dev/null || echo "?")
+        jobs_imported=$(python3 -c "import sys,json; print(json.load(sys.stdin).get('jobs_imported',0))" < "$BODY_FILE" 2>/dev/null || echo "?")
+        events_counted=$(python3 -c "import sys,json; print(json.load(sys.stdin).get('events_counted',0))" < "$BODY_FILE" 2>/dev/null || echo "?")
+        auto_matched=$(python3 -c "import sys,json; d=json.load(sys.stdin).get('correlation_summary',{}); print(d.get('auto_matched','?') if d else '?')" < "$BODY_FILE" 2>/dev/null || echo "?")
+        pending_review=$(python3 -c "import sys,json; d=json.load(sys.stdin).get('correlation_summary',{}); print(d.get('pending_review','?') if d else '?')" < "$BODY_FILE" 2>/dev/null || echo "?")
+        unmatched=$(python3 -c "import sys,json; d=json.load(sys.stdin).get('correlation_summary',{}); print(d.get('unmatched','?') if d else '?')" < "$BODY_FILE" 2>/dev/null || echo "?")
+
+        green "  AAP metrics uploaded successfully:"
+        dim "    Hosts imported:  $hosts_imported"
+        dim "    Jobs imported:   $jobs_imported"
+        dim "    Events counted:  $events_counted"
+        dim "    Auto-matched:    $auto_matched  (SMBIOS UUID + exact hostname)"
+        dim "    Pending review:  $pending_review  (low-confidence matches)"
+        dim "    Unmatched:       $unmatched"
+        AAP_CREATED=1
+    else
+        red "  ! AAP metrics upload FAILED (HTTP $STATUS): $(cat "$BODY_FILE")"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # Clean up temp files
+    rm -rf "$AAP_TMPDIR"
+
+    echo ""
+    bold "AAP seed data summary:"
+    dim "  16 AAP hosts (DNS hostname variants pointing to 9 unique VMs + 2 unknown)"
+    dim "  3 indirect managed nodes (network devices)"
+    dim "  27 job executions across patching, security, database ops, etc."
+    dim "  21 job events for activity tracking"
+    dim ""
+    dim "  Deduplication scenarios:"
+    dim "    rhel9-webserver-01 / .redhat.com / .lab.rdu.redhat.com  ->  VM vm-7001"
+    dim "    rhel9-webserver-02 / .redhat.com / .lab.rdu.redhat.com  ->  VM vm-7002"
+    dim "    rhel9-db-primary / .lab.rdu.redhat.com                  ->  VM vm-7003"
+    dim "    satellite-01 / .lab.rdu.redhat.com                      ->  VM vm-7007"
+    dim "    mystery-server-42                                        ->  No match (pending review)"
+    dim "    legacy-app.corp.local                                    ->  No match (no SMBIOS)"
+    echo ""
+    green "  AAP automation data seeded: $AAP_CREATED"
+}
+
 # ---------- Dispatch ----------
 
 case "$VENDOR" in
@@ -2034,6 +2226,9 @@ case "$VENDOR" in
         if $CLEAN; then clean_vendor openshift; fi
         seed_openshift
         ;;
+    aap)
+        seed_aap
+        ;;
     all)
         if $CLEAN; then
             for v in vmware aws azure openshift; do clean_vendor "$v"; done
@@ -2043,10 +2238,11 @@ case "$VENDOR" in
         seed_azure
         seed_openshift
         seed_playlists
+        seed_aap
         ;;
     *)
         red "Unknown vendor: $VENDOR"
-        red "Supported: vmware, aws, azure, openshift, all"
+        red "Supported: vmware, aws, azure, openshift, aap, all"
         exit 1
         ;;
 esac
@@ -2061,6 +2257,9 @@ fi
 green "Relationships:     $REL_CREATED"
 if [ "$PLAYLIST_CREATED" -gt 0 ]; then
     green "Playlists:         $PLAYLIST_CREATED"
+fi
+if [ "${AAP_CREATED:-0}" -gt 0 ]; then
+    green "AAP upload:        $AAP_CREATED (metrics archive uploaded + correlated)"
 fi
 if [ "$ERRORS" -gt 0 ]; then
     red "Errors:            $ERRORS"

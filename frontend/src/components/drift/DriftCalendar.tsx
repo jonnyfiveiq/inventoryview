@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { useDriftTimeline, useFleetDriftTimeline } from "@/hooks/useResources";
 import { usePlaylistActivityTimeline } from "@/hooks/usePlaylists";
+import { useTracking } from "@/hooks/useTracking";
 import {
   computeIntensity,
   computeAbsoluteIntensity,
@@ -33,6 +34,7 @@ export default function DriftCalendar({
   onDayClick,
   className,
 }: DriftCalendarProps) {
+  const { track } = useTracking();
   const [defaults] = useState(getDefaultDates);
   const [startDate, setStartDate] = useState(defaults[0]);
   const [endDate, setEndDate] = useState(defaults[1]);
@@ -169,7 +171,10 @@ export default function DriftCalendar({
           data={data}
           getColor={getColor}
           isDiscoveryDate={isDiscoveryDate}
-          onDayClick={mode === "resource" || mode === "playlist" ? onDayClick : undefined}
+          onDayClick={mode === "resource" || mode === "playlist" ? (date: string) => {
+            track("Drift Detection", "drift_timeline_expanded");
+            onDayClick?.(date);
+          } : undefined}
         />
       </div>
       <CalendarLegend />

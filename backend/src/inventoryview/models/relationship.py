@@ -22,6 +22,8 @@ class EdgeType(StrEnum):
     ROUTED_FROM = "ROUTED_FROM"
     PEERS_WITH = "PEERS_WITH"
     SAME_ASSET = "SAME_ASSET"
+    AUTOMATED_BY = "AUTOMATED_BY"
+    AUTOMATING = "AUTOMATING"
 
 
 class Relationship(BaseModel):

@@ -15,6 +15,7 @@ const vendorColors: Record<string, string> = {
   azure: "#06b6d4",
   openshift: "#ef4444",
   kubernetes: "#326ce5",
+  aap: "#10b981",
 };
 
 /**
@@ -47,6 +48,7 @@ function orderChain(
     kubernetes_cluster: 3,
     database_instance: 4,
     application: 5,
+    aap_host: 6,
   };
 
   // Sort nodes by layer priority, then by vendor (vmware before openshift)
@@ -146,51 +148,62 @@ export default function AssetChainFlow({
               )}
 
               {/* Node card */}
-              <Link
-                to={`/resources/${node.uid}`}
-                className={`
+              {(() => {
+                const isAapHost = node.uid.startsWith("aap:");
+                const cardClasses = `
                   flex flex-col rounded-lg border px-4 py-3 min-w-[180px] max-w-[220px]
                   transition-all hover:scale-[1.02]
                   ${isCurrent
                     ? "bg-surface border-amber-500/50 ring-1 ring-amber-500/30"
                     : "bg-surface border-border hover:border-amber-500/30"
                   }
-                `}
-              >
-                {/* Vendor badge */}
-                <div className="flex items-center gap-1.5 mb-2">
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: color }}
-                  />
-                  <span
-                    className="text-[10px] font-semibold uppercase tracking-wider"
-                    style={{ color }}
-                  >
-                    {node.vendor}
-                  </span>
-                  {isCurrent && (
-                    <span className="text-[9px] text-amber-500 font-medium ml-auto">
-                      current
+                `;
+                const cardContent = (
+                  <>
+                    {/* Vendor badge */}
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span
+                        className="text-[10px] font-semibold uppercase tracking-wider"
+                        style={{ color }}
+                      >
+                        {node.vendor}
+                      </span>
+                      {isCurrent && (
+                        <span className="text-[9px] text-amber-500 font-medium ml-auto">
+                          current
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Name */}
+                    <span className="text-sm font-medium leading-tight truncate">
+                      {node.name}
                     </span>
-                  )}
-                </div>
 
-                {/* Name */}
-                <span className="text-sm font-medium leading-tight truncate">
-                  {node.name}
-                </span>
+                    {/* Type + state */}
+                    <span className="text-[11px] text-text-muted mt-1">
+                      {node.normalised_type.replace(/_/g, " ")}
+                    </span>
+                    {node.state && node.state !== "None" && (
+                      <span className="text-[10px] text-text-dim mt-0.5">
+                        {node.state}
+                      </span>
+                    )}
+                  </>
+                );
 
-                {/* Type + state */}
-                <span className="text-[11px] text-text-muted mt-1">
-                  {node.normalised_type.replace(/_/g, " ")}
-                </span>
-                {node.state && node.state !== "None" && (
-                  <span className="text-[10px] text-text-dim mt-0.5">
-                    {node.state}
-                  </span>
-                )}
-              </Link>
+                return isAapHost ? (
+                  <div className={cardClasses}>{cardContent}</div>
+                ) : (
+                  <Link to={`/resources/${node.uid}`} className={cardClasses}>
+                    {cardContent}
+                  </Link>
+                );
+              })()}
             </div>
           );
         })}

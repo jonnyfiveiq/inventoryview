@@ -13,6 +13,7 @@ from inventoryview.middleware.auth import require_auth
 from inventoryview.schemas.auth import LoginRequest, LoginResponse, TokenRevokeRequest
 from inventoryview.schemas.errors import ErrorCode, error_response
 from inventoryview.services.auth import create_token, decode_token, revoke_token
+from inventoryview.services.usage import record_login_audit
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -24,6 +25,7 @@ async def login(body: LoginRequest, request: Request):
     """Authenticate and receive a bearer token."""
     settings = request.app.state.settings
     pool = get_pool()
+    client_ip = request.client.host if request.client else "unknown"
 
     async with pool.connection() as conn:
         result = await conn.execute(
@@ -33,6 +35,7 @@ async def login(body: LoginRequest, request: Request):
         row = await result.fetchone()
 
     if row is None:
+        await record_login_audit(pool, body.username, "failure", client_ip, "Invalid credentials")
         return JSONResponse(
             status_code=401,
             content=error_response(ErrorCode.UNAUTHORIZED, "Invalid credentials"),
@@ -41,6 +44,7 @@ async def login(body: LoginRequest, request: Request):
     try:
         ph.verify(row["password_hash"], body.password)
     except VerifyMismatchError:
+        await record_login_audit(pool, body.username, "failure", client_ip, "Invalid credentials")
         return JSONResponse(
             status_code=401,
             content=error_response(ErrorCode.UNAUTHORIZED, "Invalid credentials"),
@@ -57,6 +61,8 @@ async def login(body: LoginRequest, request: Request):
         secret=settings.jwt_secret,
         expiry_hours=settings.token_expiry_hours,
     )
+
+    await record_login_audit(pool, body.username, "success", client_ip)
 
     return LoginResponse(
         token=token,

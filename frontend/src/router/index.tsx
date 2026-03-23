@@ -11,6 +11,10 @@ const VendorPage = lazy(() => import("@/pages/VendorPage"));
 const ResourceDetailPage = lazy(() => import("@/pages/ResourceDetailPage"));
 const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage"));
 const PlaylistDetailPage = lazy(() => import("@/pages/PlaylistDetailPage"));
+const AutomationDashboardPage = lazy(() => import("@/pages/AutomationDashboardPage"));
+const AutomationUploadPage = lazy(() => import("@/pages/AutomationUploadPage"));
+const AutomationReviewPage = lazy(() => import("@/pages/AutomationReviewPage"));
+const UsageDashboardPage = lazy(() => import("@/pages/UsageDashboardPage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 
 function Loading() {
@@ -58,8 +62,24 @@ export const router = createBrowserRouter([
         element: <Suspense fallback={<Loading />}><PlaylistDetailPage /></Suspense>,
       },
       {
+        path: "/automations",
+        element: <Suspense fallback={<Loading />}><AutomationDashboardPage /></Suspense>,
+      },
+      {
+        path: "/automations/upload",
+        element: <Suspense fallback={<Loading />}><AutomationUploadPage /></Suspense>,
+      },
+      {
+        path: "/automations/review",
+        element: <Suspense fallback={<Loading />}><AutomationReviewPage /></Suspense>,
+      },
+      {
         path: "/analytics",
         element: <Suspense fallback={<Loading />}><AnalyticsPage /></Suspense>,
+      },
+      {
+        path: "/admin/usage",
+        element: <Suspense fallback={<Loading />}><UsageDashboardPage /></Suspense>,
       },
     ],
   },

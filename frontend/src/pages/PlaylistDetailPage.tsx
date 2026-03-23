@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ListMusic, Trash2, Copy, Check, Code } from "lucide-react";
 import { usePlaylist, useRemoveFromPlaylist, useUpdatePlaylist } from "@/hooks/usePlaylists";
@@ -6,6 +6,7 @@ import DriftCalendar from "@/components/drift/DriftCalendar";
 import PlaylistActivityLog from "@/components/playlist/PlaylistActivityLog";
 import DonutChart from "@/components/heatmap/DonutChart";
 import ErrorBanner from "@/components/layout/ErrorBanner";
+import { useTracking } from "@/hooks/useTracking";
 import { cn } from "@/lib/utils";
 
 const stateColors: Record<string, string> = {
@@ -21,7 +22,10 @@ const stateColors: Record<string, string> = {
 export default function PlaylistDetailPage() {
   const { identifier } = useParams<{ identifier: string }>();
   const navigate = useNavigate();
+  const { track } = useTracking();
   const { data: playlist, isLoading, error } = usePlaylist(identifier!);
+
+  useEffect(() => { track("Playlists", "page_view"); }, [identifier]);
   const removeMutation = useRemoveFromPlaylist();
   const updatePlaylist = useUpdatePlaylist();
   const [editingName, setEditingName] = useState(false);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { useInfiniteResources } from "@/hooks/useResources";
+import { useTracking } from "@/hooks/useTracking";
 import FilterBar from "@/components/provider/FilterBar";
 import ResourceTable from "@/components/provider/ResourceTable";
 import GraphOverlay from "@/components/graph/GraphOverlay";
@@ -10,8 +11,11 @@ import type { Resource } from "@/api/types";
 
 export default function ProviderPage() {
   const { vendor } = useParams<{ vendor: string }>();
+  const { track } = useTracking();
   const [filters, setFilters] = useState<Record<string, string | undefined>>({});
   const [graphUid, setGraphUid] = useState<string | null>(null);
+
+  useEffect(() => { track("Resource Browsing", "page_view"); }, [vendor]);
 
   const queryParams = {
     vendor,

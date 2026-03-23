@@ -1,5 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useGraph } from "@/hooks/useGraph";
+import { useAutomationGraph } from "@/hooks/useAutomation";
+import { useTracking } from "@/hooks/useTracking";
 import { getResourceGraph } from "@/api/resources";
 import GraphCanvas from "./GraphCanvas";
 import GraphControls from "./GraphControls";
@@ -13,13 +15,53 @@ interface GraphOverlayProps {
 const MAX_NODES = 100;
 
 export default function GraphOverlay({ uid, onClose }: GraphOverlayProps) {
+  const { track } = useTracking();
   const [depth, setDepth] = useState(1);
   const [mergedData, setMergedData] = useState<SubgraphResponse | null>(null);
 
-  const { data, isLoading, error } = useGraph(uid, depth);
+  useEffect(() => { track("Graph Visualisation", "graph_overlay_opened"); }, []);
 
-  // Use merged data if we've done expansions, otherwise use query data
-  const displayData = mergedData ?? data;
+  const { data, isLoading, error } = useGraph(uid, depth);
+  const { data: automationData } = useAutomationGraph(uid);
+
+  // Merge automation graph data into the infrastructure graph
+  const baseData = useMemo(() => {
+    if (!data) return null;
+    if (!automationData || (automationData.nodes.length === 0 && automationData.edges.length === 0)) {
+      return data;
+    }
+
+    const existingUids = new Set(data.nodes.map((n) => n.uid));
+    const automationNodes = automationData.nodes
+      .filter((n) => !existingUids.has(n.id))
+      .map((n) => ({
+        uid: n.id,
+        name: n.label,
+        category: "automation",
+        vendor: n.vendor ?? "aap",
+        normalised_type: n.type === "AAPHost" ? "aap_host" : (n.normalised_type ?? "unknown"),
+      }));
+
+    const existingEdgeKeys = new Set(
+      data.edges.map((e) => `${e.source_uid}-${e.target_uid}-${e.type}`)
+    );
+    const automationEdges = automationData.edges
+      .filter((e) => !existingEdgeKeys.has(`${e.source}-${e.target}-${e.type}`))
+      .map((e) => ({
+        source_uid: e.source,
+        target_uid: e.target,
+        type: e.type,
+        confidence: e.confidence ?? 1,
+      }));
+
+    return {
+      nodes: [...data.nodes, ...automationNodes],
+      edges: [...data.edges, ...automationEdges],
+    };
+  }, [data, automationData]);
+
+  // Use merged data if we've done expansions, otherwise use base data
+  const displayData = mergedData ?? baseData;
 
   const handleNodeExpand = useCallback(
     async (nodeUid: string) => {
@@ -54,7 +96,8 @@ export default function GraphOverlay({ uid, onClose }: GraphOverlayProps) {
   const handleDepthChange = useCallback((newDepth: number) => {
     setMergedData(null);
     setDepth(newDepth);
-  }, []);
+    track("Graph Visualisation", "depth_changed");
+  }, [track]);
 
   return (
     <div

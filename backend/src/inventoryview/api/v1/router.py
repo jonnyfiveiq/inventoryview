@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from inventoryview.api.v1 import auth, correlations, credentials, drift, health, playlists, relationships, resources, setup
+from inventoryview.api.v1 import auth, automations, correlations, credentials, drift, health, playlists, relationships, resources, setup, usage
 
 router = APIRouter()
 
@@ -15,3 +15,5 @@ router.include_router(credentials.router, prefix="/credentials", tags=["credenti
 router.include_router(drift.router, prefix="/drift", tags=["drift"])
 router.include_router(correlations.router, prefix="/correlations", tags=["correlations"])
 router.include_router(playlists.router, prefix="/playlists", tags=["playlists"])
+router.include_router(automations.router, prefix="/automations", tags=["automations"])
+router.include_router(usage.router, prefix="/usage", tags=["usage"])
