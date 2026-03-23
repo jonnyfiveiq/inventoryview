@@ -1,6 +1,7 @@
 import { BarChart3 } from "lucide-react";
 import { useAllResources } from "@/hooks/useResources";
 import HeatmapDetail from "@/components/heatmap/HeatmapDetail";
+import DriftCalendar from "@/components/drift/DriftCalendar";
 import ErrorBanner from "@/components/layout/ErrorBanner";
 
 export default function AnalyticsPage() {
@@ -34,6 +35,12 @@ export default function AnalyticsPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Analytics</h1>
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold mb-3">Drift Activity</h2>
+        <div className="bg-surface border border-border rounded-lg p-4">
+          <DriftCalendar mode="fleet" />
+        </div>
+      </div>
       <HeatmapDetail resources={data.data} />
     </div>
   );

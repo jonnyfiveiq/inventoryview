@@ -1,11 +1,14 @@
 import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Network, GitCompareArrows } from "lucide-react";
-import { useResource, useResourceRelationships, useResourceDriftExists } from "@/hooks/useResources";
+import { useResource, useResourceRelationships, useResourceDriftExists, useAssetChain } from "@/hooks/useResources";
 import { useQueries } from "@tanstack/react-query";
 import { getResource } from "@/api/resources";
 import GraphOverlay from "@/components/graph/GraphOverlay";
 import DriftModal from "@/components/resource/DriftModal";
+import DriftCalendar from "@/components/drift/DriftCalendar";
+import AssetChainFlow from "@/components/resource/AssetChainFlow";
+import AddToPlaylistButton from "@/components/playlist/AddToPlaylistButton";
 import ErrorBanner from "@/components/layout/ErrorBanner";
 import { cn } from "@/lib/utils";
 
@@ -22,10 +25,12 @@ export default function ResourceDetailPage() {
   const { uid } = useParams<{ uid: string }>();
   const [showGraph, setShowGraph] = useState(false);
   const [showDrift, setShowDrift] = useState(false);
+  const [selectedDriftDate, setSelectedDriftDate] = useState<string | undefined>();
 
   const { data: resource, isLoading, error } = useResource(uid!);
   const { data: relationships } = useResourceRelationships(uid!);
   const { data: driftStatus } = useResourceDriftExists(uid!);
+  const { data: assetChain } = useAssetChain(uid!);
 
   // Collect unique related resource UIDs to resolve their names
   const relatedUids = useMemo(() => {
@@ -116,6 +121,7 @@ export default function ResourceDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <AddToPlaylistButton resourceUid={uid!} />
           {driftStatus?.has_drift && (
             <button
               onClick={() => setShowDrift(true)}
@@ -134,6 +140,32 @@ export default function ResourceDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Asset Chain Flow */}
+      {assetChain && (
+        <section className="mb-8">
+          <AssetChainFlow
+            nodes={assetChain.nodes}
+            edges={assetChain.edges}
+            currentUid={uid!}
+          />
+        </section>
+      )}
+
+      {/* Drift Calendar */}
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold mb-3">Drift Activity</h2>
+        <div className="bg-surface border border-border rounded-lg p-4">
+          <DriftCalendar
+            mode="resource"
+            resourceUid={uid}
+            onDayClick={(date) => {
+              setSelectedDriftDate(date);
+              setShowDrift(true);
+            }}
+          />
+        </div>
+      </section>
 
       {/* Properties table */}
       <section className="mb-8">
@@ -222,7 +254,11 @@ export default function ResourceDetailPage() {
         <DriftModal
           uid={uid}
           resourceName={resource.name}
-          onClose={() => setShowDrift(false)}
+          filterDate={selectedDriftDate}
+          onClose={() => {
+            setShowDrift(false);
+            setSelectedDriftDate(undefined);
+          }}
         />
       )}
     </div>

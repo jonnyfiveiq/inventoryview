@@ -7,6 +7,7 @@ interface DriftModalProps {
   uid: string;
   resourceName: string;
   onClose: () => void;
+  filterDate?: string;
 }
 
 function formatField(field: string): string {
@@ -43,14 +44,20 @@ const fieldColors: Record<string, string> = {
   cpu_cores: "#60a5fa",
 };
 
-export default function DriftModal({ uid, resourceName, onClose }: DriftModalProps) {
+export default function DriftModal({ uid, resourceName, onClose, filterDate }: DriftModalProps) {
   const { data, isLoading } = useResourceDrift(uid);
 
-  // Group drift entries by date
+  // Group drift entries by date, optionally filtered to a specific day
   const grouped = useMemo(() => {
     if (!data?.data) return [];
+
+    let entries = data.data;
+    if (filterDate) {
+      entries = entries.filter((e) => e.changed_at.slice(0, 10) === filterDate);
+    }
+
     const groups: Record<string, DriftEntry[]> = {};
-    for (const entry of data.data) {
+    for (const entry of entries) {
       const date = new Date(entry.changed_at).toLocaleDateString(undefined, {
         year: "numeric",
         month: "long",
@@ -60,7 +67,7 @@ export default function DriftModal({ uid, resourceName, onClose }: DriftModalPro
       groups[date].push(entry);
     }
     return Object.entries(groups);
-  }, [data]);
+  }, [data, filterDate]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -72,7 +79,14 @@ export default function DriftModal({ uid, resourceName, onClose }: DriftModalPro
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border shrink-0">
           <div>
-            <h2 className="text-lg font-semibold">Configuration Drift</h2>
+            <h2 className="text-lg font-semibold">
+              Configuration Drift
+              {filterDate && (
+                <span className="text-sm font-normal text-text-muted ml-2">
+                  ({new Date(filterDate + "T00:00:00").toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })})
+                </span>
+              )}
+            </h2>
             <p className="text-sm text-text-muted mt-0.5">{resourceName}</p>
           </div>
           <button

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   Server,
@@ -9,10 +9,15 @@ import {
   ChevronRight,
   LogOut,
   ChevronDown,
+  ListMusic,
+  Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAllResources } from "@/hooks/useResources";
+import { usePlaylists, useCreatePlaylist, useUpdatePlaylist, useDeletePlaylist } from "@/hooks/usePlaylists";
 
 interface SidebarProps {
   onSearchClick?: () => void;
@@ -21,9 +26,17 @@ interface SidebarProps {
 export default function Sidebar({ onSearchClick }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [providersOpen, setProvidersOpen] = useState(true);
+  const [playlistsOpen, setPlaylistsOpen] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
   const location = useLocation();
+  const navigate = useNavigate();
   const { logout, username } = useAuth();
   const { data: resourceData } = useAllResources();
+  const { data: playlistData } = usePlaylists();
+  const createPlaylist = useCreatePlaylist();
+  const updatePlaylist = useUpdatePlaylist();
+  const deletePlaylistMut = useDeletePlaylist();
 
   const vendors = resourceData
     ? [...new Set(resourceData.data.map((r) => r.vendor))].sort()
@@ -32,6 +45,46 @@ export default function Sidebar({ onSearchClick }: SidebarProps) {
   const isActive = (path: string) => location.pathname === path;
   const isProviderActive = (vendor: string) =>
     location.pathname === `/providers/${vendor}`;
+  const isPlaylistActive = (slug: string) =>
+    location.pathname === `/playlists/${slug}`;
+
+  const playlists = playlistData?.data ?? [];
+
+  const handleCreatePlaylist = () => {
+    createPlaylist.mutate(
+      { name: "New Playlist" },
+      {
+        onSuccess: (created) => {
+          navigate(`/playlists/${created.slug}`);
+          setEditingId(created.id);
+          setEditName(created.name);
+        },
+      },
+    );
+  };
+
+  const handleRenameSubmit = (id: string, slug: string) => {
+    if (editName.trim() && editName.trim() !== "") {
+      updatePlaylist.mutate(
+        { identifier: slug, updates: { name: editName.trim() } },
+        { onSettled: () => setEditingId(null) },
+      );
+    } else {
+      setEditingId(null);
+    }
+  };
+
+  const handleDeletePlaylist = (slug: string, name: string) => {
+    if (window.confirm(`Delete playlist "${name}"? This cannot be undone.`)) {
+      deletePlaylistMut.mutate(slug, {
+        onSuccess: () => {
+          if (location.pathname === `/playlists/${slug}`) {
+            navigate("/");
+          }
+        },
+      });
+    }
+  };
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 1280px)");
@@ -88,47 +141,154 @@ export default function Sidebar({ onSearchClick }: SidebarProps) {
           )}
         </button>
 
-        {/* Providers section */}
-        <div>
-          <button
-            onClick={() => setProvidersOpen(!providersOpen)}
-            className={cn(
-              "flex items-center w-full px-4 py-2.5 text-sm text-text-muted hover:text-text hover:bg-surface-hover transition-colors",
-              collapsed && "justify-center"
-            )}
-          >
-            <Server className="w-5 h-5 shrink-0" />
-            {!collapsed && (
-              <>
-                <span className="ml-3 flex-1 text-left">Providers</span>
-                <ChevronDown
-                  className={cn(
-                    "w-4 h-4 transition-transform",
-                    !providersOpen && "-rotate-90"
-                  )}
-                />
-              </>
-            )}
-          </button>
-          {providersOpen && !collapsed && vendors.length > 0 && (
-            <div className="ml-8 border-l border-border">
-              {vendors.map((vendor) => (
-                <Link
-                  key={vendor}
-                  to={`/providers/${vendor}`}
-                  className={cn(
-                    "block px-4 py-1.5 text-sm transition-colors",
-                    isProviderActive(vendor)
-                      ? "text-accent"
-                      : "text-text-muted hover:text-text"
-                  )}
-                >
-                  {vendor}
-                </Link>
-              ))}
-            </div>
+        {/* Providers section header */}
+        <div
+          onClick={() => {
+            if (collapsed) {
+              setCollapsed(false);
+              setProvidersOpen(true);
+            } else {
+              setProvidersOpen(!providersOpen);
+            }
+          }}
+          className={cn(
+            "flex items-center w-full px-4 py-2.5 text-sm text-text-muted hover:text-text hover:bg-surface-hover transition-colors cursor-pointer select-none",
+            collapsed && "justify-center"
+          )}
+          title={collapsed ? "Providers" : undefined}
+        >
+          <Server className="w-5 h-5 shrink-0" />
+          {!collapsed && (
+            <>
+              <span className="ml-3 flex-1 text-left">Providers</span>
+              <ChevronDown
+                className={cn(
+                  "w-4 h-4 ml-1 transition-transform",
+                  !providersOpen && "-rotate-90"
+                )}
+              />
+            </>
           )}
         </div>
+        {/* Provider items — flat, not nested */}
+        {providersOpen && !collapsed && vendors.map((vendor) => (
+          <Link
+            key={vendor}
+            to={`/providers/${vendor}`}
+            className={cn(
+              "block pl-12 pr-4 py-1.5 text-sm transition-colors border-l border-border ml-8",
+              isProviderActive(vendor)
+                ? "text-accent"
+                : "text-text-muted hover:text-text hover:bg-surface-hover"
+            )}
+          >
+            {vendor}
+          </Link>
+        ))}
+
+        {/* Playlists section header */}
+        <div
+          onClick={() => {
+            if (collapsed) {
+              setCollapsed(false);
+              setPlaylistsOpen(true);
+            } else {
+              setPlaylistsOpen(!playlistsOpen);
+            }
+          }}
+          className={cn(
+            "flex items-center w-full px-4 py-2.5 text-sm text-text-muted hover:text-text hover:bg-surface-hover transition-colors cursor-pointer select-none",
+            collapsed && "justify-center"
+          )}
+          title={collapsed ? "Playlists" : undefined}
+        >
+          <ListMusic className="w-5 h-5 shrink-0" />
+          {!collapsed && (
+            <>
+              <span className="ml-3 flex-1 text-left">Playlists</span>
+              <span
+                role="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCreatePlaylist();
+                }}
+                className="p-0.5 rounded hover:bg-surface text-text-dim hover:text-text transition-colors cursor-pointer"
+                title="New Playlist"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </span>
+              <ChevronDown
+                className={cn(
+                  "w-4 h-4 ml-1 transition-transform",
+                  !playlistsOpen && "-rotate-90"
+                )}
+              />
+            </>
+          )}
+        </div>
+        {/* Playlist items — flat, not nested */}
+        {playlistsOpen && !collapsed && playlists.length === 0 && (
+          <div className="pl-12 pr-4 py-2 text-xs text-text-dim border-l border-border ml-8">No playlists yet</div>
+        )}
+        {playlistsOpen && !collapsed && playlists.map((pl) =>
+          editingId === pl.id ? (
+            <div
+              key={pl.id}
+              className="flex items-center pl-12 pr-4 py-1.5 text-sm border-l border-border ml-8"
+            >
+              <input
+                autoFocus
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onBlur={() => handleRenameSubmit(pl.id, pl.slug)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRenameSubmit(pl.id, pl.slug);
+                  if (e.key === "Escape") setEditingId(null);
+                }}
+                className="flex-1 bg-transparent border-b border-accent text-sm text-text outline-none py-0"
+              />
+            </div>
+          ) : (
+            <Link
+              key={pl.id}
+              to={`/playlists/${pl.slug}`}
+              className={cn(
+                "group flex items-center pl-12 pr-4 py-1.5 text-sm transition-colors border-l border-border ml-8",
+                isPlaylistActive(pl.slug)
+                  ? "text-accent"
+                  : "text-text-muted hover:text-text hover:bg-surface-hover"
+              )}
+            >
+              <span className="flex-1 truncate">{pl.name}</span>
+              <span className="text-[10px] text-text-dim mr-1">{pl.member_count}</span>
+              <span
+                role="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setEditingId(pl.id);
+                  setEditName(pl.name);
+                }}
+                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-surface-hover transition-all"
+                title="Rename"
+              >
+                <Pencil className="w-3 h-3" />
+              </span>
+              <span
+                role="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  handleDeletePlaylist(pl.slug, pl.name);
+                }}
+                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-surface-hover text-red-400 transition-all"
+                title="Delete"
+              >
+                <Trash2 className="w-3 h-3" />
+              </span>
+            </Link>
+          )
+        )}
 
         <NavItem
           to="/analytics"
@@ -173,6 +333,7 @@ export default function Sidebar({ onSearchClick }: SidebarProps) {
     </aside>
   );
 }
+
 
 function NavItem({
   to,

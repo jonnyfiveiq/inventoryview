@@ -4,6 +4,7 @@ import { useInfiniteResources } from "@/hooks/useResources";
 import FilterBar from "@/components/provider/FilterBar";
 import ResourceTable from "@/components/provider/ResourceTable";
 import GraphOverlay from "@/components/graph/GraphOverlay";
+import DriftCalendar from "@/components/drift/DriftCalendar";
 import ErrorBanner from "@/components/layout/ErrorBanner";
 import type { Resource } from "@/api/types";
 
@@ -53,6 +54,13 @@ export default function ProviderPage() {
         {allResources.length} resources loaded
         {hasNextPage && " (scroll for more)"}
       </p>
+
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold mb-3">Drift Activity</h2>
+        <div className="bg-surface border border-border rounded-lg p-4">
+          <DriftCalendar mode="fleet" />
+        </div>
+      </div>
 
       <div className="mb-4">
         <FilterBar

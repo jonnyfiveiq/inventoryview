@@ -121,6 +121,116 @@ async def get_drift_history(
     ]
 
 
+async def get_drift_timeline(
+    pool: AsyncConnectionPool,
+    resource_uid: str,
+    start: str | None = None,
+    end: str | None = None,
+) -> dict:
+    """Get aggregated daily drift counts for a resource within a date range.
+
+    Returns {data: [{date, count, fields}], total_drift_count: int}.
+    """
+    from datetime import date, timedelta
+
+    end_date = date.fromisoformat(end) if end else date.today()
+    start_date = date.fromisoformat(start) if start else end_date - timedelta(days=364)
+
+    async with pool.connection() as conn:
+        # Daily aggregation within date range
+        result = await conn.execute(
+            "SELECT DATE(changed_at) AS day, "
+            "       COUNT(*) AS cnt, "
+            "       ARRAY_AGG(DISTINCT field) AS fields "
+            "FROM resource_drift "
+            "WHERE resource_uid = %s "
+            "  AND changed_at >= %s::date "
+            "  AND changed_at < %s::date + INTERVAL '1 day' "
+            "GROUP BY DATE(changed_at) "
+            "ORDER BY day",
+            (resource_uid, start_date.isoformat(), end_date.isoformat()),
+        )
+        rows = await result.fetchall()
+
+        # Total lifetime count
+        total_result = await conn.execute(
+            "SELECT COUNT(*) AS cnt FROM resource_drift WHERE resource_uid = %s",
+            (resource_uid,),
+        )
+        total_row = await total_result.fetchone()
+
+    data = [
+        {
+            "date": row["day"].isoformat() if hasattr(row["day"], "isoformat") else str(row["day"]),
+            "count": row["cnt"],
+            "fields": list(row["fields"]) if row["fields"] else [],
+        }
+        for row in rows
+    ]
+
+    return {
+        "data": data,
+        "total_drift_count": total_row["cnt"] if total_row else 0,
+    }
+
+
+async def get_fleet_drift_timeline(
+    pool: AsyncConnectionPool,
+    start: str | None = None,
+    end: str | None = None,
+) -> dict:
+    """Get aggregated daily drift counts across ALL resources within a date range.
+
+    Returns {data: [{date, count, fields}], fleet_avg_lifetime: float, total_resources_with_drift: int}.
+    """
+    from datetime import date, timedelta
+
+    end_date = date.fromisoformat(end) if end else date.today()
+    start_date = date.fromisoformat(start) if start else end_date - timedelta(days=364)
+
+    async with pool.connection() as conn:
+        # Daily aggregation across all resources
+        result = await conn.execute(
+            "SELECT DATE(changed_at) AS day, "
+            "       COUNT(*) AS cnt, "
+            "       ARRAY_AGG(DISTINCT field) AS fields "
+            "FROM resource_drift "
+            "WHERE changed_at >= %s::date "
+            "  AND changed_at < %s::date + INTERVAL '1 day' "
+            "GROUP BY DATE(changed_at) "
+            "ORDER BY day",
+            (start_date.isoformat(), end_date.isoformat()),
+        )
+        rows = await result.fetchall()
+
+        # Fleet stats
+        stats_result = await conn.execute(
+            "SELECT COUNT(*) AS total_events, "
+            "       COUNT(DISTINCT resource_uid) AS total_resources "
+            "FROM resource_drift"
+        )
+        stats_row = await stats_result.fetchone()
+
+    data = [
+        {
+            "date": row["day"].isoformat() if hasattr(row["day"], "isoformat") else str(row["day"]),
+            "count": row["cnt"],
+            "fields": list(row["fields"]) if row["fields"] else [],
+        }
+        for row in rows
+    ]
+
+    total_events = stats_row["total_events"] if stats_row else 0
+    total_resources = stats_row["total_resources"] if stats_row else 0
+    fleet_avg = total_events / total_resources if total_resources > 0 else 0
+
+    return {
+        "data": data,
+        "fleet_avg_lifetime": round(fleet_avg, 2),
+        "total_resources_with_drift": total_resources,
+    }
+
+
 async def has_drift(
     pool: AsyncConnectionPool,
     resource_uid: str,

@@ -1,5 +1,5 @@
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { listResources, getResource, getResourceRelationships, getResourceDrift, getResourceDriftExists, type ListResourcesParams } from "@/api/resources";
+import { listResources, getResource, getResourceRelationships, getResourceDrift, getResourceDriftExists, getResourceDriftTimeline, getFleetDriftTimeline, getAssetTwins, getAssetChain, type ListResourcesParams } from "@/api/resources";
 import type { Resource, PaginatedResponse, Relationship } from "@/api/types";
 
 export function useResourceList(params: ListResourcesParams = {}, options?: { enabled?: boolean }) {
@@ -47,6 +47,41 @@ export function useResourceDrift(uid: string, enabled: boolean = true) {
     queryKey: ["resource", uid, "drift"],
     queryFn: () => getResourceDrift(uid),
     enabled: !!uid && enabled,
+  });
+}
+
+export function useDriftTimeline(uid: string, start?: string, end?: string) {
+  return useQuery({
+    queryKey: ["resource", uid, "drift-timeline", start, end],
+    queryFn: () => getResourceDriftTimeline(uid, start, end),
+    enabled: !!uid,
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useFleetDriftTimeline(start?: string, end?: string) {
+  return useQuery({
+    queryKey: ["drift", "fleet-timeline", start, end],
+    queryFn: () => getFleetDriftTimeline(start, end),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useAssetTwins(uid: string) {
+  return useQuery({
+    queryKey: ["resource", uid, "asset-twins"],
+    queryFn: () => getAssetTwins(uid),
+    enabled: !!uid,
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useAssetChain(uid: string, enabled = true) {
+  return useQuery({
+    queryKey: ["resource", uid, "asset-chain"],
+    queryFn: () => getAssetChain(uid),
+    enabled: !!uid && enabled,
+    staleTime: 60 * 1000,
   });
 }
 

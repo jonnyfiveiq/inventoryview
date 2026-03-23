@@ -504,6 +504,99 @@ seed_vmware() {
         "raw_properties": {"guest_os": "Red Hat Enterprise Linux 8 (64-bit)", "num_cpu": 2, "memory_mb": 4096, "disk_gb": 60, "tools_status": "toolsNotRunning", "annotation": "DECOMMISSION - ticket INFRA-4521"}
     }'
 
+    # --- OCP Node VMs (these VMs host the OpenShift nodes) ---
+    bold "OCP Node VMs"
+    create_resource '{
+        "name": "ocp-master-0-vm",
+        "vendor": "vmware",
+        "vendor_id": "vm-7020",
+        "vendor_type": "vim.VirtualMachine",
+        "normalised_type": "virtual_machine",
+        "category": "compute",
+        "state": "poweredOn",
+        "raw_properties": {"guest_os": "Red Hat CoreOS 4.15", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 120, "ip_address": "10.100.2.10", "tools_status": "toolsOk", "smbios_uuid": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e01", "annotation": "OCP master-0"}
+    }'
+    create_resource '{
+        "name": "ocp-master-1-vm",
+        "vendor": "vmware",
+        "vendor_id": "vm-7021",
+        "vendor_type": "vim.VirtualMachine",
+        "normalised_type": "virtual_machine",
+        "category": "compute",
+        "state": "poweredOn",
+        "raw_properties": {"guest_os": "Red Hat CoreOS 4.15", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 120, "ip_address": "10.100.2.11", "tools_status": "toolsOk", "smbios_uuid": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e02", "annotation": "OCP master-1"}
+    }'
+    create_resource '{
+        "name": "ocp-master-2-vm",
+        "vendor": "vmware",
+        "vendor_id": "vm-7022",
+        "vendor_type": "vim.VirtualMachine",
+        "normalised_type": "virtual_machine",
+        "category": "compute",
+        "state": "poweredOn",
+        "raw_properties": {"guest_os": "Red Hat CoreOS 4.15", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 120, "ip_address": "10.100.2.12", "tools_status": "toolsOk", "smbios_uuid": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e03", "annotation": "OCP master-2"}
+    }'
+    create_resource '{
+        "name": "ocp-worker-0-vm",
+        "vendor": "vmware",
+        "vendor_id": "vm-7023",
+        "vendor_type": "vim.VirtualMachine",
+        "normalised_type": "virtual_machine",
+        "category": "compute",
+        "state": "poweredOn",
+        "raw_properties": {"guest_os": "Red Hat CoreOS 4.15", "num_cpu": 16, "memory_mb": 65536, "disk_gb": 250, "ip_address": "10.100.2.20", "tools_status": "toolsOk", "smbios_uuid": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e04", "annotation": "OCP worker-0"}
+    }'
+    create_resource '{
+        "name": "ocp-worker-1-vm",
+        "vendor": "vmware",
+        "vendor_id": "vm-7024",
+        "vendor_type": "vim.VirtualMachine",
+        "normalised_type": "virtual_machine",
+        "category": "compute",
+        "state": "poweredOn",
+        "raw_properties": {"guest_os": "Red Hat CoreOS 4.15", "num_cpu": 16, "memory_mb": 65536, "disk_gb": 250, "ip_address": "10.100.2.21", "tools_status": "toolsOk", "smbios_uuid": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e05", "annotation": "OCP worker-1"}
+    }'
+    create_resource '{
+        "name": "ocp-worker-2-vm",
+        "vendor": "vmware",
+        "vendor_id": "vm-7025",
+        "vendor_type": "vim.VirtualMachine",
+        "normalised_type": "virtual_machine",
+        "category": "compute",
+        "state": "poweredOn",
+        "raw_properties": {"guest_os": "Red Hat CoreOS 4.15", "num_cpu": 16, "memory_mb": 65536, "disk_gb": 250, "ip_address": "10.100.2.22", "tools_status": "toolsOk", "smbios_uuid": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e06", "annotation": "OCP worker-2"}
+    }'
+    create_resource '{
+        "name": "ocp-worker-3-vm",
+        "vendor": "vmware",
+        "vendor_id": "vm-7026",
+        "vendor_type": "vim.VirtualMachine",
+        "normalised_type": "virtual_machine",
+        "category": "compute",
+        "state": "poweredOn",
+        "raw_properties": {"guest_os": "Red Hat CoreOS 4.15", "num_cpu": 16, "memory_mb": 65536, "disk_gb": 250, "ip_address": "10.100.2.23", "tools_status": "toolsOk", "smbios_uuid": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e07", "annotation": "OCP worker-3"}
+    }'
+    create_resource '{
+        "name": "ocp-infra-0-vm",
+        "vendor": "vmware",
+        "vendor_id": "vm-7027",
+        "vendor_type": "vim.VirtualMachine",
+        "normalised_type": "virtual_machine",
+        "category": "compute",
+        "state": "poweredOn",
+        "raw_properties": {"guest_os": "Red Hat CoreOS 4.15", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 120, "ip_address": "10.100.2.30", "tools_status": "toolsOk", "smbios_uuid": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e08", "annotation": "OCP infra-0"}
+    }'
+    create_resource '{
+        "name": "ocp-infra-1-vm",
+        "vendor": "vmware",
+        "vendor_id": "vm-7028",
+        "vendor_type": "vim.VirtualMachine",
+        "normalised_type": "virtual_machine",
+        "category": "compute",
+        "state": "poweredOn",
+        "raw_properties": {"guest_os": "Red Hat CoreOS 4.15", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 120, "ip_address": "10.100.2.31", "tools_status": "toolsOk", "smbios_uuid": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e09", "annotation": "OCP infra-1"}
+    }'
+
     # --- Resource Pools ---
     bold "Resource Pools"
     create_resource '{
@@ -606,6 +699,18 @@ seed_vmware() {
     create_relationship "vm-7010"          "host-3003"        "HOSTED_ON"
     create_relationship "vm-7011"          "host-3001"        "HOSTED_ON"
     create_relationship "vm-7012"          "host-3001"        "HOSTED_ON"
+
+    # OCP node VMs hosted on ESXi hosts
+    bold "OCP VMs -> Hosts"
+    create_relationship "vm-7020"          "host-3001"        "HOSTED_ON"
+    create_relationship "vm-7021"          "host-3002"        "HOSTED_ON"
+    create_relationship "vm-7022"          "host-3003"        "HOSTED_ON"
+    create_relationship "vm-7023"          "host-3001"        "HOSTED_ON"
+    create_relationship "vm-7024"          "host-3002"        "HOSTED_ON"
+    create_relationship "vm-7025"          "host-3003"        "HOSTED_ON"
+    create_relationship "vm-7026"          "host-3001"        "HOSTED_ON"
+    create_relationship "vm-7027"          "host-3002"        "HOSTED_ON"
+    create_relationship "vm-7028"          "host-3003"        "HOSTED_ON"
 
     # VMs connected to port groups (network)
     bold "VMs -> Port Groups"
@@ -1472,7 +1577,7 @@ seed_openshift() {
         "category": "compute",
         "region": "rdu-dc1",
         "state": "ready",
-        "raw_properties": {"role": "master", "num_cpu": 8, "memory_mb": 32768, "os": "RHCOS 4.15", "kubelet_version": "v1.28.8+073f9f8", "container_runtime": "cri-o://1.28.4"}
+        "raw_properties": {"role": "master", "num_cpu": 8, "memory_mb": 32768, "os": "RHCOS 4.15", "kubelet_version": "v1.28.8+073f9f8", "container_runtime": "cri-o://1.28.4", "serial_number": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e01", "system_vendor": "VMware, Inc.", "product_name": "VMware Virtual Platform"}
     }'
     create_resource '{
         "name": "master-1.ocp-prod-rdu",
@@ -1483,7 +1588,7 @@ seed_openshift() {
         "category": "compute",
         "region": "rdu-dc1",
         "state": "ready",
-        "raw_properties": {"role": "master", "num_cpu": 8, "memory_mb": 32768, "os": "RHCOS 4.15", "kubelet_version": "v1.28.8+073f9f8"}
+        "raw_properties": {"role": "master", "num_cpu": 8, "memory_mb": 32768, "os": "RHCOS 4.15", "kubelet_version": "v1.28.8+073f9f8", "serial_number": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e02", "system_vendor": "VMware, Inc.", "product_name": "VMware Virtual Platform"}
     }'
     create_resource '{
         "name": "master-2.ocp-prod-rdu",
@@ -1494,7 +1599,7 @@ seed_openshift() {
         "category": "compute",
         "region": "rdu-dc1",
         "state": "ready",
-        "raw_properties": {"role": "master", "num_cpu": 8, "memory_mb": 32768, "os": "RHCOS 4.15", "kubelet_version": "v1.28.8+073f9f8"}
+        "raw_properties": {"role": "master", "num_cpu": 8, "memory_mb": 32768, "os": "RHCOS 4.15", "kubelet_version": "v1.28.8+073f9f8", "serial_number": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e03", "system_vendor": "VMware, Inc.", "product_name": "VMware Virtual Platform"}
     }'
 
     # --- Worker Nodes ---
@@ -1508,7 +1613,7 @@ seed_openshift() {
         "category": "compute",
         "region": "rdu-dc1",
         "state": "ready",
-        "raw_properties": {"role": "worker", "num_cpu": 16, "memory_mb": 65536, "os": "RHCOS 4.15", "kubelet_version": "v1.28.8+073f9f8", "pods_running": 42}
+        "raw_properties": {"role": "worker", "num_cpu": 16, "memory_mb": 65536, "os": "RHCOS 4.15", "kubelet_version": "v1.28.8+073f9f8", "pods_running": 42, "serial_number": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e04", "system_vendor": "VMware, Inc.", "product_name": "VMware Virtual Platform"}
     }'
     create_resource '{
         "name": "worker-1.ocp-prod-rdu",
@@ -1519,7 +1624,7 @@ seed_openshift() {
         "category": "compute",
         "region": "rdu-dc1",
         "state": "ready",
-        "raw_properties": {"role": "worker", "num_cpu": 16, "memory_mb": 65536, "os": "RHCOS 4.15", "kubelet_version": "v1.28.8+073f9f8", "pods_running": 38}
+        "raw_properties": {"role": "worker", "num_cpu": 16, "memory_mb": 65536, "os": "RHCOS 4.15", "kubelet_version": "v1.28.8+073f9f8", "pods_running": 38, "serial_number": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e05", "system_vendor": "VMware, Inc.", "product_name": "VMware Virtual Platform"}
     }'
     create_resource '{
         "name": "worker-2.ocp-prod-rdu",
@@ -1530,7 +1635,7 @@ seed_openshift() {
         "category": "compute",
         "region": "rdu-dc1",
         "state": "ready",
-        "raw_properties": {"role": "worker", "num_cpu": 16, "memory_mb": 65536, "os": "RHCOS 4.15", "kubelet_version": "v1.28.8+073f9f8", "pods_running": 35}
+        "raw_properties": {"role": "worker", "num_cpu": 16, "memory_mb": 65536, "os": "RHCOS 4.15", "kubelet_version": "v1.28.8+073f9f8", "pods_running": 35, "serial_number": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e06", "system_vendor": "VMware, Inc.", "product_name": "VMware Virtual Platform"}
     }'
     create_resource '{
         "name": "worker-3.ocp-prod-rdu",
@@ -1541,7 +1646,7 @@ seed_openshift() {
         "category": "compute",
         "region": "rdu-dc1",
         "state": "not_ready",
-        "raw_properties": {"role": "worker", "num_cpu": 16, "memory_mb": 65536, "os": "RHCOS 4.15", "kubelet_version": "v1.28.8+073f9f8", "pods_running": 0, "condition": "DiskPressure"}
+        "raw_properties": {"role": "worker", "num_cpu": 16, "memory_mb": 65536, "os": "RHCOS 4.15", "kubelet_version": "v1.28.8+073f9f8", "pods_running": 0, "condition": "DiskPressure", "serial_number": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e07", "system_vendor": "VMware, Inc.", "product_name": "VMware Virtual Platform"}
     }'
 
     # --- Infra Nodes ---
@@ -1555,7 +1660,7 @@ seed_openshift() {
         "category": "compute",
         "region": "rdu-dc1",
         "state": "ready",
-        "raw_properties": {"role": "infra", "num_cpu": 8, "memory_mb": 32768, "os": "RHCOS 4.15", "taint": "node-role.kubernetes.io/infra:NoSchedule"}
+        "raw_properties": {"role": "infra", "num_cpu": 8, "memory_mb": 32768, "os": "RHCOS 4.15", "taint": "node-role.kubernetes.io/infra:NoSchedule", "serial_number": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e08", "system_vendor": "VMware, Inc.", "product_name": "VMware Virtual Platform"}
     }'
     create_resource '{
         "name": "infra-1.ocp-prod-rdu",
@@ -1566,7 +1671,7 @@ seed_openshift() {
         "category": "compute",
         "region": "rdu-dc1",
         "state": "ready",
-        "raw_properties": {"role": "infra", "num_cpu": 8, "memory_mb": 32768, "os": "RHCOS 4.15", "taint": "node-role.kubernetes.io/infra:NoSchedule"}
+        "raw_properties": {"role": "infra", "num_cpu": 8, "memory_mb": 32768, "os": "RHCOS 4.15", "taint": "node-role.kubernetes.io/infra:NoSchedule", "serial_number": "421a3f12-8b4e-5c6d-9e0f-1a2b3c4d5e09", "system_vendor": "VMware, Inc.", "product_name": "VMware Virtual Platform"}
     }'
 
     # --- Projects (Namespaces) ---
@@ -1830,6 +1935,86 @@ seed_openshift() {
     green "  Drift entries created: $DRIFT_CREATED"
 }
 
+# ---------- Playlist seed data ----------
+
+PLAYLIST_CREATED=0
+
+seed_playlists() {
+    bold "Seeding playlists..."
+
+    # Create playlists
+    api POST /playlists "${AUTH[@]}" -H 'Content-Type: application/json' \
+        -d '{"name":"Production OpenShift Cluster","description":"All resources in the production OpenShift 4.15 cluster"}'
+    PROD_OCP_SLUG=$(python3 -c "import sys,json; print(json.load(sys.stdin).get('slug',''))" < "$BODY_FILE" 2>/dev/null || true)
+    if [ -n "$PROD_OCP_SLUG" ]; then
+        green "  + Playlist: Production OpenShift Cluster ($PROD_OCP_SLUG)"
+        PLAYLIST_CREATED=$((PLAYLIST_CREATED + 1))
+    fi
+
+    api POST /playlists "${AUTH[@]}" -H 'Content-Type: application/json' \
+        -d '{"name":"Network Edge Devices","description":"Firewalls, switches, and routers at the network boundary"}'
+    NET_EDGE_SLUG=$(python3 -c "import sys,json; print(json.load(sys.stdin).get('slug',''))" < "$BODY_FILE" 2>/dev/null || true)
+    if [ -n "$NET_EDGE_SLUG" ]; then
+        green "  + Playlist: Network Edge Devices ($NET_EDGE_SLUG)"
+        PLAYLIST_CREATED=$((PLAYLIST_CREATED + 1))
+    fi
+
+    api POST /playlists "${AUTH[@]}" -H 'Content-Type: application/json' \
+        -d '{"name":"VMware Production VMs","description":"Virtual machines running production workloads on VMware"}'
+    VM_PROD_SLUG=$(python3 -c "import sys,json; print(json.load(sys.stdin).get('slug',''))" < "$BODY_FILE" 2>/dev/null || true)
+    if [ -n "$VM_PROD_SLUG" ]; then
+        green "  + Playlist: VMware Production VMs ($VM_PROD_SLUG)"
+        PLAYLIST_CREATED=$((PLAYLIST_CREATED + 1))
+    fi
+
+    api POST /playlists "${AUTH[@]}" -H 'Content-Type: application/json' \
+        -d '{"name":"AWS US-East Infrastructure","description":"All AWS resources in us-east-1 for Ansible targeting"}'
+    AWS_EAST_SLUG=$(python3 -c "import sys,json; print(json.load(sys.stdin).get('slug',''))" < "$BODY_FILE" 2>/dev/null || true)
+    if [ -n "$AWS_EAST_SLUG" ]; then
+        green "  + Playlist: AWS US-East Infrastructure ($AWS_EAST_SLUG)"
+        PLAYLIST_CREATED=$((PLAYLIST_CREATED + 1))
+    fi
+
+    # Add resources to playlists by looking up existing resource UIDs
+    # Helper: add resources matching a vendor to a playlist
+    add_vendor_resources_to_playlist() {
+        local slug="$1" vendor="$2" max="${3:-10}"
+        api GET "/resources?vendor=$vendor&page_size=$max" "${AUTH[@]}"
+        local uids
+        uids=$(python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for item in data.get('data', []):
+    uid = item.get('uid', '')
+    if uid: print(uid)
+" < "$BODY_FILE" 2>/dev/null || true)
+
+        local count=0
+        while IFS= read -r uid; do
+            [ -z "$uid" ] && continue
+            api POST "/playlists/$slug/members" "${AUTH[@]}" -H 'Content-Type: application/json' \
+                -d "{\"resource_uid\":\"$uid\"}"
+            if [ "$STATUS" -eq 201 ] || [ "$STATUS" -eq 200 ] || [ "$STATUS" -eq 409 ]; then
+                count=$((count + 1))
+            fi
+        done <<< "$uids"
+        dim "    Added $count $vendor resources to $slug"
+    }
+
+    # Populate playlists
+    if [ -n "$PROD_OCP_SLUG" ]; then
+        add_vendor_resources_to_playlist "$PROD_OCP_SLUG" "openshift" 20
+    fi
+    if [ -n "$VM_PROD_SLUG" ]; then
+        add_vendor_resources_to_playlist "$VM_PROD_SLUG" "vmware" 15
+    fi
+    if [ -n "$AWS_EAST_SLUG" ]; then
+        add_vendor_resources_to_playlist "$AWS_EAST_SLUG" "aws" 15
+    fi
+
+    green "  Playlists created: $PLAYLIST_CREATED"
+}
+
 # ---------- Dispatch ----------
 
 case "$VENDOR" in
@@ -1857,6 +2042,7 @@ case "$VENDOR" in
         seed_aws
         seed_azure
         seed_openshift
+        seed_playlists
         ;;
     *)
         red "Unknown vendor: $VENDOR"
@@ -1873,6 +2059,9 @@ if [ "$UPDATED" -gt 0 ]; then
     green "Resources updated: $UPDATED  (already existed)"
 fi
 green "Relationships:     $REL_CREATED"
+if [ "$PLAYLIST_CREATED" -gt 0 ]; then
+    green "Playlists:         $PLAYLIST_CREATED"
+fi
 if [ "$ERRORS" -gt 0 ]; then
     red "Errors:            $ERRORS"
 fi

@@ -13,7 +13,9 @@ Infrastructure inventory dashboard with a graph-based data model. Discover, brow
 - **Netflix-style landing page** — horizontal carousels of resources grouped by normalised type (virtual machines, hypervisors, datastores, clusters, networks, etc.)
 - **Spotlight search** — macOS Spotlight-style universal search overlay (Cmd+K / Ctrl+K) with real-time results grouped by taxonomy type across all providers, keyboard navigation, and sidebar search icon
 - **Vendor carousel** — colour-coded cards for each provider with resource counts; click through to a vendor drill-down page
+- **Resource playlists** — Spotify-style curated resource collections. Create playlists from the sidebar, add/remove resources from any resource detail page, view members in a detail page with infrastructure donut charts, activity calendar heatmap, and activity log. Playlists are available as JSON on a REST endpoint for external clients (Ansible, Nexus, etc.) to consume as guardrailed inventories
 - **Resources Discovered heatmap** — at-a-glance summary showing counts by type, provider bar charts, and state distribution
+- **Drift calendar heatmap** — GitHub-style contribution calendar showing drift activity across the fleet or per-resource, with click-to-filter day drill-down
 - **Interactive graph visualisation** — Cytoscape.js overlay showing resource relationships (DEPENDS_ON, HOSTED_ON, MEMBER_OF, CONTAINS, CONNECTED_TO, ATTACHED_TO, MANAGES, etc.) with type-based node shapes, adjustable depth, pan/zoom, and click-to-expand
 - **Drift tracking** — see how resource configuration changes over time (state, CPU, memory, IP, etc.) in a date-grouped modal
 - **Provider drill-down** — filterable, paginated resource tables per vendor with inline graph access
@@ -48,7 +50,7 @@ On first boot the container automatically:
 1. Starts PostgreSQL 16 with Apache AGE
 2. Runs database migrations
 3. Creates the admin account
-4. Seeds demo data (96 resources, 146 relationships, 44 drift entries across VMware, AWS, Azure, OpenShift)
+4. Seeds demo data (96 resources, 146 relationships, 44 drift entries, 4 playlists across VMware, AWS, Azure, OpenShift)
 
 Open **http://localhost:8080** and log in with `admin` / `SuperSecretPass123`.
 
@@ -122,6 +124,7 @@ The seed script creates an admin account (`admin` / `SuperSecretPass123`), then 
 - **96 resources** across 4 vendors
 - **146 relationships** modelling real infrastructure topology
 - **44 drift entries** showing configuration changes over time
+- **4 playlists** with curated resource collections and activity history
 
 ### 4. Start the frontend
 
@@ -139,8 +142,8 @@ Open http://localhost:5173 and log in with `admin` / `SuperSecretPass123`.
 .
 ├── backend/                    # FastAPI backend
 │   ├── src/inventoryview/
-│   │   ├── api/v1/            # REST endpoints (auth, resources, relationships, health, setup, credentials)
-│   │   ├── services/          # Business logic (resources, graph, drift, auth, credentials, vault)
+│   │   ├── api/v1/            # REST endpoints (auth, resources, relationships, playlists, drift, health, setup, credentials)
+│   │   ├── services/          # Business logic (resources, graph, drift, playlists, auth, credentials, vault)
 │   │   ├── models/            # Data models
 │   │   ├── schemas/           # Pydantic request/response schemas
 │   │   └── middleware/        # Auth middleware
@@ -152,13 +155,15 @@ Open http://localhost:5173 and log in with `admin` / `SuperSecretPass123`.
 │   │   ├── components/
 │   │   │   ├── carousel/      # ResourceCarousel, ResourceCard, VendorCarousel
 │   │   │   ├── graph/         # GraphOverlay, GraphCanvas, GraphControls
-│   │   │   ├── heatmap/       # HeatmapStrip, HeatmapDetail
+│   │   │   ├── drift/         # DriftCalendar, CalendarGrid, CalendarCell, CalendarNav, CalendarLegend
+│   │   │   ├── heatmap/       # HeatmapStrip, HeatmapDetail, DonutChart
 │   │   │   ├── layout/        # Sidebar, AppLayout (layout route), ErrorBanner
+│   │   │   ├── playlist/      # AddToPlaylistButton, PlaylistActivityLog
 │   │   │   ├── provider/      # ResourceTable, FilterBar
 │   │   │   ├── resource/      # DriftModal
 │   │   │   └── search/        # SpotlightOverlay, SearchInput, SearchResults, TaxonomyGroup, SearchResultItem
-│   │   ├── hooks/             # TanStack Query hooks (useResources, useSearch, useGraph, useAuth)
-│   │   ├── pages/             # LoginPage, LandingPage, VendorPage, ProviderPage, ResourceDetailPage, AnalyticsPage
+│   │   ├── hooks/             # TanStack Query hooks (useResources, useSearch, useGraph, useAuth, usePlaylists)
+│   │   ├── pages/             # LoginPage, LandingPage, VendorPage, ProviderPage, ResourceDetailPage, PlaylistDetailPage, AnalyticsPage
 │   │   ├── stores/            # Zustand auth store
 │   │   └── router/            # React Router config, ProtectedRoute
 │   └── package.json
@@ -168,7 +173,9 @@ Open http://localhost:5173 and log in with `admin` / `SuperSecretPass123`.
 ├── specs/                      # Feature specifications (speckit)
 │   ├── 001-foundation-core-api/
 │   ├── 002-inventory-frontend-dashboard/
-│   └── 003-spotlight-search/
+│   ├── 003-spotlight-search/
+│   ├── 004-drift-calendar-heatmap/
+│   └── 005-resource-playlists/
 ├── seed_test_data.sh          # Multi-vendor test data seeder
 └── Makefile
 ```
@@ -191,6 +198,18 @@ All endpoints under `/api/v1/`. Authentication via JWT bearer token.
 | `/resources/{uid}/drift` | GET | Drift history for a resource |
 | `/resources/{uid}/drift/exists` | GET | Check if drift entries exist |
 | `/resources/{uid}/drift` | POST | Record a drift entry |
+| `/resources/{uid}/drift/timeline` | GET | Aggregated daily drift timeline |
+| `/resources/{uid}/playlists` | GET | Playlists containing this resource |
+| `/playlists` | GET | List all playlists with member counts |
+| `/playlists` | POST | Create a new playlist |
+| `/playlists/{identifier}` | GET | Get playlist detail by slug or UUID (`?detail=full` for raw properties) |
+| `/playlists/{identifier}` | PATCH | Update playlist name/description |
+| `/playlists/{identifier}` | DELETE | Delete a playlist |
+| `/playlists/{identifier}/members` | POST | Add a resource to a playlist |
+| `/playlists/{identifier}/members/{uid}` | DELETE | Remove a resource from a playlist |
+| `/playlists/{identifier}/activity` | GET | Activity log for a playlist (filterable by date) |
+| `/playlists/{identifier}/activity/timeline` | GET | Aggregated daily activity timeline |
+| `/fleet/drift/timeline` | GET | Fleet-wide aggregated drift timeline |
 | `/credentials` | GET/POST | Manage collector credentials |
 
 ## Graph model

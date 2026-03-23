@@ -1,5 +1,5 @@
 import apiClient from "./client";
-import type { Resource, PaginatedResponse, Relationship, SubgraphResponse, DriftResponse, DriftExistsResponse } from "./types";
+import type { Resource, PaginatedResponse, Relationship, SubgraphResponse, DriftResponse, DriftExistsResponse, DriftTimelineResponse, FleetDriftTimelineResponse, AssetTwinsResponse, AssetChainResponse } from "./types";
 
 export interface ListResourcesParams {
   vendor?: string;
@@ -41,5 +41,43 @@ export async function getResourceDrift(uid: string): Promise<DriftResponse> {
 
 export async function getResourceDriftExists(uid: string): Promise<DriftExistsResponse> {
   const res = await apiClient.get<DriftExistsResponse>(`/resources/${uid}/drift/exists`);
+  return res.data;
+}
+
+export async function getResourceDriftTimeline(
+  uid: string,
+  start?: string,
+  end?: string,
+): Promise<DriftTimelineResponse> {
+  const params: Record<string, string> = {};
+  if (start) params.start = start;
+  if (end) params.end = end;
+  const res = await apiClient.get<DriftTimelineResponse>(`/resources/${uid}/drift/timeline`, { params });
+  return res.data;
+}
+
+export async function getAssetTwins(uid: string): Promise<AssetTwinsResponse> {
+  const res = await apiClient.get<AssetTwinsResponse>(`/resources/${uid}/asset-twins`);
+  return res.data;
+}
+
+export async function getAssetChain(uid: string): Promise<AssetChainResponse> {
+  const res = await apiClient.get<AssetChainResponse>(`/resources/${uid}/asset-chain`);
+  return res.data;
+}
+
+export async function scanCorrelations(): Promise<{ created: number; correlations: unknown[] }> {
+  const res = await apiClient.post<{ created: number; correlations: unknown[] }>("/correlations/scan");
+  return res.data;
+}
+
+export async function getFleetDriftTimeline(
+  start?: string,
+  end?: string,
+): Promise<FleetDriftTimelineResponse> {
+  const params: Record<string, string> = {};
+  if (start) params.start = start;
+  if (end) params.end = end;
+  const res = await apiClient.get<FleetDriftTimelineResponse>("/drift/fleet-timeline", { params });
   return res.data;
 }

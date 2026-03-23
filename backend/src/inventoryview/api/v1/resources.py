@@ -156,6 +156,33 @@ async def create_drift(uid: str, request: Request, payload: dict = Depends(requi
     return JSONResponse(status_code=201, content={"status": "recorded"})
 
 
+@router.get("/{uid}/drift/timeline")
+async def get_drift_timeline(
+    uid: str,
+    request: Request,
+    start: str | None = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    end: str | None = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    payload: dict = Depends(require_auth),
+):
+    """Get aggregated daily drift timeline for a resource."""
+    from inventoryview.services.drift import get_drift_timeline
+    from inventoryview.services.resources import get_resource
+
+    pool = get_pool()
+    settings = request.app.state.settings
+    timeline = await get_drift_timeline(pool, uid, start=start, end=end)
+
+    # Get first_seen from the resource
+    resource = await get_resource(pool, settings.graph_name, uid)
+    first_seen = resource["first_seen"] if resource else None
+
+    return {
+        "data": timeline["data"],
+        "total_drift_count": timeline["total_drift_count"],
+        "first_seen": first_seen,
+    }
+
+
 @router.get("/{uid}/drift/exists")
 async def drift_exists(uid: str, request: Request, payload: dict = Depends(require_auth)):
     """Check if a resource has drift history."""
@@ -163,6 +190,49 @@ async def drift_exists(uid: str, request: Request, payload: dict = Depends(requi
 
     pool = get_pool()
     return {"has_drift": await has_drift(pool, uid)}
+
+
+@router.get("/{uid}/asset-twins")
+async def get_asset_twins_endpoint(
+    uid: str,
+    request: Request,
+    payload: dict = Depends(require_auth),
+):
+    """Get resources that represent the same underlying asset (matched by hardware IDs)."""
+    from inventoryview.services.asset_correlation import get_asset_twins
+
+    pool = get_pool()
+    settings = request.app.state.settings
+    twins = await get_asset_twins(pool, settings.graph_name, uid)
+    return {"data": twins}
+
+
+@router.get("/{uid}/asset-chain")
+async def get_asset_chain_endpoint(
+    uid: str,
+    request: Request,
+    payload: dict = Depends(require_auth),
+):
+    """Get the full transitive chain of SAME_ASSET-linked resources."""
+    from inventoryview.services.asset_correlation import get_asset_chain
+
+    pool = get_pool()
+    settings = request.app.state.settings
+    return await get_asset_chain(pool, settings.graph_name, uid)
+
+
+@router.get("/{uid}/playlists")
+async def get_resource_playlists(
+    uid: str,
+    request: Request,
+    payload: dict = Depends(require_auth),
+):
+    """Get all playlists that contain this resource."""
+    from inventoryview.services.playlists import get_playlists_for_resource
+
+    pool = get_pool()
+    playlists = await get_playlists_for_resource(pool, uid)
+    return {"data": playlists}
 
 
 @router.get("/{uid}/graph")

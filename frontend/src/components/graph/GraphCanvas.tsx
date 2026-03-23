@@ -12,6 +12,7 @@ const edgeColors: Record<string, string> = {
   MANAGES: "#f97316",
   ROUTES_TO: "#14b8a6",
   PEERS_WITH: "#ec4899",
+  SAME_ASSET: "#f59e0b",
 };
 
 const categoryColors: Record<string, string> = {
@@ -151,6 +152,15 @@ export default function GraphCanvas({
             "text-background-color": "#0a0a0f",
             "text-background-opacity": 0.7,
             "text-background-padding": "2px",
+          } as cytoscape.Css.Edge,
+        },
+        {
+          selector: "edge[edgeType = 'SAME_ASSET']",
+          style: {
+            "line-style": "dashed",
+            "line-dash-pattern": [6, 3],
+            width: 3,
+            "target-arrow-shape": "none",
           } as cytoscape.Css.Edge,
         },
         {

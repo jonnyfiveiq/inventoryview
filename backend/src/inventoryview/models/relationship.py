@@ -21,6 +21,7 @@ class EdgeType(StrEnum):
     ROUTES_TO = "ROUTES_TO"
     ROUTED_FROM = "ROUTED_FROM"
     PEERS_WITH = "PEERS_WITH"
+    SAME_ASSET = "SAME_ASSET"
 
 
 class Relationship(BaseModel):

@@ -10,6 +10,7 @@ const ProviderPage = lazy(() => import("@/pages/ProviderPage"));
 const VendorPage = lazy(() => import("@/pages/VendorPage"));
 const ResourceDetailPage = lazy(() => import("@/pages/ResourceDetailPage"));
 const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage"));
+const PlaylistDetailPage = lazy(() => import("@/pages/PlaylistDetailPage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 
 function Loading() {
@@ -51,6 +52,10 @@ export const router = createBrowserRouter([
       {
         path: "/resources/:uid",
         element: <Suspense fallback={<Loading />}><ResourceDetailPage /></Suspense>,
+      },
+      {
+        path: "/playlists/:identifier",
+        element: <Suspense fallback={<Loading />}><PlaylistDetailPage /></Suspense>,
       },
       {
         path: "/analytics",
