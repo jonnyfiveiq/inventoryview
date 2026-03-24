@@ -11,6 +11,7 @@ import AssetChainFlow from "@/components/resource/AssetChainFlow";
 import AddToPlaylistButton from "@/components/playlist/AddToPlaylistButton";
 import ErrorBanner from "@/components/layout/ErrorBanner";
 import AutomationHistory from "@/components/automation/AutomationHistory";
+import CorrelationDetail from "@/components/automation/CorrelationDetail";
 import TemperatureGauge from "@/components/automation/TemperatureGauge";
 import { useResourceCorrelation } from "@/hooks/useAutomation";
 import { useTracking } from "@/hooks/useTracking";
@@ -139,7 +140,7 @@ export default function ResourceDetailPage() {
             <TemperatureGauge
               confidence={correlation.correlation.confidence}
               tier={correlation.correlation.tier}
-              variant="thermometer"
+              variant="dot"
               size="md"
             />
           )}
@@ -175,6 +176,9 @@ export default function ResourceDetailPage() {
           />
         </section>
       )}
+
+      {/* Correlation Match Detail */}
+      <CorrelationDetail resourceUid={uid!} />
 
       {/* Drift Calendar */}
       <section className="mb-8">

@@ -10,6 +10,7 @@ import HeatmapStrip from "@/components/heatmap/HeatmapStrip";
 import DriftCalendar from "@/components/drift/DriftCalendar";
 import ErrorBanner from "@/components/layout/ErrorBanner";
 import AutomationCoverage from "@/components/automation/AutomationCoverage";
+import CorrelationDistribution from "@/components/automation/CorrelationDistribution";
 import type { Resource } from "@/api/types";
 
 export default function LandingPage() {
@@ -81,6 +82,9 @@ export default function LandingPage() {
         <div className="bg-surface border border-border rounded-lg p-4">
           <DriftCalendar mode="fleet" />
         </div>
+      </div>
+      <div className="mt-6">
+        <CorrelationDistribution />
       </div>
       <div className="mt-6">
         <AutomationCoverage />

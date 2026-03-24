@@ -11,6 +11,7 @@ import {
   getCorrelationJob,
   getResourceCorrelation,
   getFleetTemperature,
+  getResourcesByConfidence,
   reCorrelate,
 } from "@/api/automations";
 import type { ReviewAction } from "@/api/types";
@@ -136,6 +137,15 @@ export function useFleetTemperature() {
   return useQuery({
     queryKey: ["automation", "fleet-temperature"],
     queryFn: getFleetTemperature,
+    staleTime: 30_000,
+  });
+}
+
+export function useResourcesByConfidence(bucket: string) {
+  return useQuery({
+    queryKey: ["automation", "resources-by-confidence", bucket],
+    queryFn: () => getResourcesByConfidence(bucket),
+    enabled: !!bucket,
     staleTime: 30_000,
   });
 }

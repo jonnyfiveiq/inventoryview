@@ -81,3 +81,25 @@ export async function getFleetDriftTimeline(
   const res = await apiClient.get<FleetDriftTimelineResponse>("/drift/fleet-timeline", { params });
   return res.data;
 }
+
+export interface FleetDayResource {
+  uid: string;
+  name: string;
+  vendor: string;
+  normalised_type: string;
+  category: string;
+  state: string | null;
+  drift_count: number;
+  fields: string[];
+}
+
+export interface FleetDayResponse {
+  date: string;
+  count: number;
+  resources: FleetDayResource[];
+}
+
+export async function getFleetDriftDay(date: string): Promise<FleetDayResponse> {
+  const res = await apiClient.get<FleetDayResponse>("/drift/fleet-day", { params: { date } });
+  return res.data;
+}

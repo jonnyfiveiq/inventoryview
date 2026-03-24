@@ -274,7 +274,14 @@ async def get_resource_correlation(
     request: Request,
     payload: dict = Depends(require_auth),
 ):
-    """Get correlation detail (temperature gauge data) for a resource."""
+    """Get correlation detail (temperature gauge data) for a resource.
+
+    Queries both the graph edge and relational aap_host data to build a
+    complete picture — handles edges created by older correlation code that
+    lack tier/matched_fields properties.
+    """
+    import json as _json
+
     from inventoryview.services.graph import execute_cypher
 
     pool = get_pool()
@@ -282,13 +289,55 @@ async def get_resource_correlation(
 
     def _band(confidence: float) -> str:
         if confidence >= 0.90:
-            return "hot"
-        if confidence >= 0.70:
-            return "warm"
-        if confidence >= 0.40:
-            return "tepid"
-        return "cold"
+            return "deterministic"
+        if confidence >= 0.75:
+            return "high"
+        if confidence >= 0.50:
+            return "moderate"
+        return "low"
 
+    # Map legacy match_reason values to canonical CorrelationTier names
+    _TIER_ALIASES = {
+        "smbios_match": "smbios_serial",
+        "smbios": "smbios_serial",
+        "bios_match": "bios_uuid",
+        "bios": "bios_uuid",
+        "mac_match": "mac_address",
+        "mac": "mac_address",
+        "ip_match": "ip_address",
+        "ip": "ip_address",
+        "fqdn_match": "fqdn",
+        "hostname_match": "hostname_heuristic",
+        "hostname": "hostname_heuristic",
+        "learned": "learned_mapping",
+        "manual": "learned_mapping",
+    }
+
+    def _clean(val) -> str | None:
+        """Convert agtype values to clean strings, treating None as absent."""
+        if val is None:
+            return None
+        s = str(val).strip('"')
+        if s in ("None", "null", ""):
+            return None
+        # Strip Python bytes repr like b'...'
+        if s.startswith("b'") and s.endswith("'"):
+            s = s[2:-1]
+        elif s.startswith('b"') and s.endswith('"'):
+            s = s[2:-1]
+        return s
+
+    def _clean_value(val: str) -> str:
+        """Strip Python bytes repr like b'...' from values."""
+        s = str(val)
+        if s.startswith("b'") and s.endswith("'"):
+            s = s[2:-1]
+        elif s.startswith('b"') and s.endswith('"'):
+            s = s[2:-1]
+        return s
+
+    # 1. Query graph edge
+    graph_row = None
     async with pool.connection() as conn:
         cypher = (
             f" MATCH (a:AAPHost)-[rel:AUTOMATED_BY]->(r:Resource {{uid: '{uid}'}}) "
@@ -301,34 +350,235 @@ async def get_resource_correlation(
             conn, settings.graph_name, cypher,
             columns="(host_id agtype, hostname agtype, conf agtype, tier agtype, mf agtype, st agtype, cb agtype, cat agtype, uat agtype)",
         )
+        if rows and isinstance(rows[0], dict):
+            graph_row = rows[0]
 
-    if not rows or not isinstance(rows[0], dict):
+    # 2. Query relational data (richer: has ansible_facts, canonical_facts, etc.)
+    rel_row = None
+    async with pool.connection() as conn:
+        from psycopg.rows import dict_row
+        conn.row_factory = dict_row
+        result = await conn.execute(
+            """
+            SELECT h.id, h.host_id, h.hostname, h.correlation_type, h.match_score,
+                   h.match_reason, h.correlation_status, h.ansible_facts,
+                   h.canonical_facts, h.smbios_uuid
+            FROM aap_host h
+            WHERE h.correlated_resource_uid = %(uid)s::uuid
+              AND h.correlation_status IN ('auto_matched', 'manual_matched')
+            ORDER BY h.match_score DESC NULLS LAST
+            LIMIT 1
+            """,
+            {"uid": uid},
+        )
+        rel_row = await result.fetchone()
+
+    if not graph_row and not rel_row:
         return {"resource_uid": uid, "is_correlated": False, "correlation": None}
 
-    row = rows[0]
-    conf = float(row.get("conf", 0))
-    import json as _json
-    mf_raw = row.get("mf")
-    matched_fields = []
-    if mf_raw:
+    # 3. Merge: prefer graph edge confidence, fall back to relational
+    conf = 0.0
+    if graph_row and graph_row.get("conf") is not None:
         try:
-            matched_fields = _json.loads(str(mf_raw)) if isinstance(mf_raw, str) else mf_raw
-        except Exception:
+            conf = float(graph_row["conf"])
+        except (ValueError, TypeError):
             pass
+    if conf == 0.0 and rel_row and rel_row.get("match_score") is not None:
+        conf = float(rel_row["match_score"])
+
+    # Tier: prefer graph, fall back to relational match_reason/correlation_type
+    tier = None
+    if graph_row:
+        tier = _clean(graph_row.get("tier"))
+    if not tier and rel_row:
+        tier = rel_row.get("match_reason") or rel_row.get("correlation_type")
+    # Normalize legacy tier names — also strip bytes repr
+    if tier:
+        tier = _clean_value(tier)
+        tier = _TIER_ALIASES.get(tier, tier)
+
+    # Status
+    status = "proposed"
+    if graph_row:
+        status = _clean(graph_row.get("st")) or "proposed"
+    if status == "proposed" and rel_row:
+        rs = rel_row.get("correlation_status", "")
+        if rs == "auto_matched":
+            status = "auto_matched"
+        elif rs == "manual_matched":
+            status = "confirmed"
+
+    # Hostname
+    hostname = ""
+    if graph_row:
+        hostname = _clean(graph_row.get("hostname")) or ""
+    if not hostname and rel_row:
+        hostname = rel_row.get("hostname", "")
+
+    host_id = ""
+    if graph_row:
+        host_id = _clean(graph_row.get("host_id")) or ""
+    if not host_id and rel_row:
+        host_id = str(rel_row.get("host_id", ""))
+
+    # Matched fields: prefer graph edge, else reconstruct from relational data
+    matched_fields = []
+    if graph_row:
+        mf_raw = graph_row.get("mf")
+        if mf_raw is not None:
+            try:
+                s = str(mf_raw).strip('"')
+                if s not in ("None", "null", ""):
+                    parsed = _json.loads(s.replace('\\"', '"'))
+                    if isinstance(parsed, list):
+                        matched_fields = parsed
+            except Exception:
+                pass
+
+    # If graph didn't have matched_fields, reconstruct from relational data
+    if not matched_fields and rel_row:
+        matched_fields = []
+        facts = rel_row.get("ansible_facts") or {}
+        canonical = rel_row.get("canonical_facts") or {}
+        if isinstance(facts, str):
+            try:
+                facts = _json.loads(facts)
+            except Exception:
+                facts = {}
+        if isinstance(canonical, str):
+            try:
+                canonical = _json.loads(canonical)
+            except Exception:
+                canonical = {}
+
+        smbios = rel_row.get("smbios_uuid") or ""
+
+        # Fetch resource raw_properties from graph for comparison
+        res_raw = {}
+        async with pool.connection() as conn2:
+            res_cypher = (
+                f" MATCH (r:Resource {{uid: '{uid}'}}) "
+                f"RETURN r.raw_properties AS rp, r.name AS name"
+            )
+            res_rows = await execute_cypher(
+                conn2, settings.graph_name, res_cypher,
+                columns="(rp agtype, name agtype)",
+            )
+            if res_rows and isinstance(res_rows[0], dict):
+                rp = res_rows[0].get("rp")
+                if rp:
+                    try:
+                        rp_str = str(rp).strip('"')
+                        res_raw = _json.loads(rp_str.replace('\\"', '"'))
+                    except Exception:
+                        res_raw = {}
+
+        # Build matched_fields by comparing what we know
+        if tier in ("smbios_serial",) or (not tier and smbios and res_raw.get("serial_number")):
+            serial_fact = facts.get("ansible_product_serial") or ""
+            serial_res = res_raw.get("serial_number", "")
+            if serial_fact and serial_res:
+                matched_fields.append({
+                    "ansible_field": "ansible_product_serial",
+                    "resource_field": "serial_number",
+                    "values": [str(serial_fact), str(serial_res)],
+                })
+
+        if tier in ("bios_uuid", "smbios_uuid") or (not tier and smbios):
+            uuid_fact = (
+                facts.get("ansible_product_uuid")
+                or canonical.get("ansible_machine_id")
+                or smbios
+                or ""
+            )
+            uuid_res = res_raw.get("smbios_uuid") or res_raw.get("system_uuid") or ""
+            if uuid_fact and uuid_res:
+                matched_fields.append({
+                    "ansible_field": "ansible_product_uuid",
+                    "resource_field": "smbios_uuid",
+                    "values": [str(uuid_fact), str(uuid_res)],
+                })
+
+        if tier == "mac_address":
+            mac_fact = ""
+            dipv4 = facts.get("ansible_default_ipv4") or {}
+            if isinstance(dipv4, dict):
+                mac_fact = dipv4.get("macaddress", "")
+            mac_res = res_raw.get("macAddress") or res_raw.get("mac_address") or ""
+            if mac_fact and mac_res:
+                matched_fields.append({
+                    "ansible_field": "ansible_default_ipv4.macaddress",
+                    "resource_field": "macAddress",
+                    "values": [str(mac_fact), str(mac_res)],
+                })
+
+        if tier == "ip_address":
+            ips = facts.get("ansible_all_ipv4_addresses") or []
+            dipv4 = facts.get("ansible_default_ipv4") or {}
+            ip_fact = ""
+            if isinstance(dipv4, dict):
+                ip_fact = dipv4.get("address", "")
+            if not ip_fact and ips:
+                ip_fact = ips[0] if isinstance(ips, list) and ips else ""
+            ip_res = res_raw.get("ip_address") or ""
+            if ip_fact and ip_res:
+                matched_fields.append({
+                    "ansible_field": "ansible_all_ipv4_addresses",
+                    "resource_field": "ip_address",
+                    "values": [str(ip_fact), str(ip_res)],
+                })
+
+        if tier in ("fqdn",):
+            fqdn_fact = facts.get("ansible_fqdn") or canonical.get("ansible_fqdn") or ""
+            # Resource FQDN may be its name
+            fqdn_res = res_raw.get("fqdn") or ""
+            if fqdn_fact:
+                matched_fields.append({
+                    "ansible_field": "ansible_fqdn",
+                    "resource_field": "fqdn",
+                    "values": [str(fqdn_fact), str(fqdn_res) or "(resource name)"],
+                })
+
+        if tier in ("hostname_heuristic",):
+            hn_fact = facts.get("ansible_hostname") or canonical.get("ansible_hostname") or hostname
+            matched_fields.append({
+                "ansible_field": "ansible_hostname",
+                "resource_field": "name (normalised)",
+                "values": [str(hn_fact), "(normalised match)"],
+            })
+
+        # If we still have nothing but do have smbios, show what we can
+        if not matched_fields and smbios:
+            uuid_res = res_raw.get("smbios_uuid", "")
+            if uuid_res:
+                matched_fields.append({
+                    "ansible_field": "smbios_uuid",
+                    "resource_field": "smbios_uuid",
+                    "values": [str(smbios), str(uuid_res)],
+                })
+
+    # Clean bytes representations from matched field values
+    for mf in matched_fields:
+        if "values" in mf and isinstance(mf["values"], list):
+            mf["values"] = [_clean_value(v) for v in mf["values"]]
+
+    confirmed_by = None
+    if graph_row:
+        confirmed_by = _clean(graph_row.get("cb"))
 
     return {
         "resource_uid": uid,
         "is_correlated": True,
         "correlation": {
-            "aap_host_id": str(row.get("host_id", "")),
-            "aap_hostname": str(row.get("hostname", "")),
+            "aap_host_id": host_id,
+            "aap_hostname": hostname,
             "confidence": conf,
-            "tier": str(row.get("tier", "")),
+            "tier": tier or "unknown",
             "matched_fields": matched_fields,
-            "status": str(row.get("st", "proposed")),
+            "status": status,
             "temperature": _band(conf),
-            "confirmed_by": str(row.get("cb", "")) if row.get("cb") else None,
-            "created_at": str(row.get("cat", "")) if row.get("cat") else None,
-            "updated_at": str(row.get("uat", "")) if row.get("uat") else None,
+            "confirmed_by": confirmed_by,
+            "created_at": _clean(graph_row.get("cat")) if graph_row else None,
+            "updated_at": _clean(graph_row.get("uat")) if graph_row else None,
         },
     }

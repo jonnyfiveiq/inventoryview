@@ -586,53 +586,294 @@ async def get_fleet_temperature(
 
     def _band(confidence: float) -> str:
         if confidence >= 0.90:
-            return "hot"
-        if confidence >= 0.70:
-            return "warm"
-        if confidence >= 0.40:
-            return "tepid"
-        return "cold"
+            return "deterministic"
+        if confidence >= 0.75:
+            return "high"
+        if confidence >= 0.50:
+            return "moderate"
+        return "low"
+
+    from inventoryview.schemas.automation import ConfidenceBucket
 
     tier_dist: dict[str, int] = {}
-    band_dist: dict[str, int] = {"hot": 0, "warm": 0, "tepid": 0, "cold": 0}
+    band_dist: dict[str, int] = {"deterministic": 0, "high": 0, "moderate": 0, "low": 0}
     total_confidence = 0.0
     total_correlated = 0
+    # Confidence buckets: unmatched, <25%, <50%, <75%, >=90%
+    bucket_counts = {"unmatched": 0, "low": 0, "moderate": 0, "high": 0, "deterministic": 0}
+    correlated_resource_uids: set[str] = set()
 
     async with pool.connection() as conn:
         cypher = (
             " MATCH (a:AAPHost)-[rel:AUTOMATED_BY]->(r:Resource) "
-            "WHERE rel.status <> 'stale' "
-            "RETURN rel.confidence AS conf, rel.tier AS tier"
+            "WHERE rel.status IS NULL OR rel.status <> 'stale' "
+            "RETURN rel.confidence AS conf, rel.tier AS tier, r.uid AS ruid"
         )
         rows = await execute_cypher(
             conn, settings.graph_name, cypher,
-            columns="(conf agtype, tier agtype)",
+            columns="(conf agtype, tier agtype, ruid agtype)",
         )
         for row in rows:
             if isinstance(row, dict):
                 conf = float(row.get("conf", 0))
                 tier = str(row.get("tier", "unknown"))
+                ruid = str(row.get("ruid", "")).strip('"')
                 total_confidence += conf
                 total_correlated += 1
                 tier_dist[tier] = tier_dist.get(tier, 0) + 1
                 band_dist[_band(conf)] += 1
+                # Track per-resource best confidence
+                if ruid and ruid not in correlated_resource_uids:
+                    correlated_resource_uids.add(ruid)
+                    if conf >= 0.90:
+                        bucket_counts["deterministic"] += 1
+                    elif conf >= 0.75:
+                        bucket_counts["high"] += 1
+                    elif conf >= 0.50:
+                        bucket_counts["moderate"] += 1
+                    else:
+                        bucket_counts["low"] += 1
+
+        # Also count pending matches (proposed but not yet confirmed)
+        pending_result = await conn.execute(
+            "SELECT DISTINCT suggested_resource_uid, match_score "
+            "FROM aap_pending_match "
+            "WHERE status = 'pending' AND suggested_resource_uid IS NOT NULL "
+            "AND match_score > 0"
+        )
+        pending_rows = await pending_result.fetchall()
+        for pr in pending_rows:
+            ruid = str(pr["suggested_resource_uid"])
+            if ruid not in correlated_resource_uids:
+                correlated_resource_uids.add(ruid)
+                conf = float(pr["match_score"])
+                if conf >= 0.90:
+                    bucket_counts["deterministic"] += 1
+                elif conf >= 0.75:
+                    bucket_counts["high"] += 1
+                elif conf >= 0.50:
+                    bucket_counts["moderate"] += 1
+                else:
+                    bucket_counts["low"] += 1
 
         # Total AAP hosts
         host_result = await conn.execute("SELECT COUNT(*) AS cnt FROM aap_host")
         host_row = await host_result.fetchone()
         total_hosts = host_row["cnt"] if host_row else 0
 
+        # Total resources — count all Resource nodes
+        total_resources = 0
+        try:
+            res_cypher = " MATCH (r:Resource) RETURN count(r) AS cnt"
+            res_rows = await execute_cypher(
+                conn, settings.graph_name, res_cypher,
+                columns="(cnt agtype)",
+            )
+            if res_rows:
+                r0 = res_rows[0]
+                if isinstance(r0, dict):
+                    total_resources = int(str(r0.get("cnt", 0)).strip('"'))
+                else:
+                    total_resources = int(str(r0).strip('"'))
+        except Exception as e:
+            logger.warning("Failed to count resources: %s", e)
+
+    bucket_counts["unmatched"] = max(0, total_resources - len(correlated_resource_uids))
     avg_conf = total_confidence / total_correlated if total_correlated else 0.0
+
+    confidence_buckets = [
+        ConfidenceBucket(
+            label="Unmatched",
+            count=bucket_counts["unmatched"],
+            description="No automation correlation found for these resources",
+        ),
+        ConfidenceBucket(
+            label="Low (<50%)",
+            count=bucket_counts["low"],
+            description="Weak match — hostname heuristic only, needs manual review",
+        ),
+        ConfidenceBucket(
+            label="Moderate (50–74%)",
+            count=bucket_counts["moderate"],
+            description="Name-based match (FQDN) — reasonable but not deterministic",
+        ),
+        ConfidenceBucket(
+            label="High (75–89%)",
+            count=bucket_counts["high"],
+            description="Network identity match (IP/MAC) — reliable for stable infrastructure",
+        ),
+        ConfidenceBucket(
+            label="Deterministic (≥90%)",
+            count=bucket_counts["deterministic"],
+            description="Hardware serial or UUID match — highest certainty, no review needed",
+        ),
+    ]
 
     return FleetTemperatureResponse(
         total_correlated=total_correlated,
         total_aap_hosts=total_hosts,
+        total_resources=total_resources,
         uncorrelated=max(0, total_hosts - total_correlated),
         weighted_average_confidence=round(avg_conf, 4),
         temperature=_band(avg_conf),
         tier_distribution=tier_dist,
         band_distribution=band_dist,
+        confidence_buckets=confidence_buckets,
     )
+
+
+@router.get("/resources-by-confidence")
+async def get_resources_by_confidence(
+    request: Request,
+    bucket: str = Query(..., description="Bucket: deterministic, high, moderate, low, unmatched"),
+    payload: dict = Depends(require_auth),
+):
+    """Return resources filtered by correlation confidence bucket."""
+    pool = get_pool()
+    settings = request.app.state.settings
+
+    from inventoryview.services.graph import execute_cypher
+
+    BUCKET_RANGES = {
+        "deterministic": (0.90, 1.01),
+        "high": (0.75, 0.90),
+        "moderate": (0.50, 0.75),
+        "low": (0.0, 0.50),
+    }
+
+    if bucket == "unmatched":
+        # Get all resource UIDs that ARE correlated
+        correlated_uids: set[str] = set()
+        async with pool.connection() as conn:
+            cypher = (
+                " MATCH (a:AAPHost)-[rel:AUTOMATED_BY]->(r:Resource) "
+                "WHERE rel.status IS NULL OR rel.status <> 'stale' "
+                "RETURN DISTINCT r.uid AS uid"
+            )
+            rows = await execute_cypher(
+                conn, settings.graph_name, cypher,
+                columns="(uid agtype)",
+            )
+            for row in rows:
+                if isinstance(row, dict):
+                    correlated_uids.add(str(row.get("uid", "")).strip('"'))
+
+            # Also get UIDs from pending matches
+            pm_result = await conn.execute(
+                "SELECT DISTINCT suggested_resource_uid FROM aap_pending_match "
+                "WHERE status = 'pending' AND suggested_resource_uid IS NOT NULL AND match_score > 0"
+            )
+            for pr in await pm_result.fetchall():
+                correlated_uids.add(str(pr["suggested_resource_uid"]))
+
+            # Get all resources, filter out correlated ones
+            all_cypher = (
+                " MATCH (r:Resource) "
+                "RETURN r.uid AS uid, r.name AS name, r.vendor AS vendor, "
+                "r.normalised_type AS ntype, r.category AS cat, r.state AS state"
+            )
+            all_rows = await execute_cypher(
+                conn, settings.graph_name, all_cypher,
+                columns="(uid agtype, name agtype, vendor agtype, ntype agtype, cat agtype, state agtype)",
+            )
+            resources = []
+            for row in all_rows:
+                if isinstance(row, dict):
+                    uid = str(row.get("uid", "")).strip('"')
+                    if uid not in correlated_uids:
+                        resources.append({
+                            "uid": uid,
+                            "name": str(row.get("name", "")).strip('"'),
+                            "vendor": str(row.get("vendor", "")).strip('"'),
+                            "normalised_type": str(row.get("ntype", "")).strip('"'),
+                            "category": str(row.get("cat", "")).strip('"'),
+                            "state": str(row.get("state", "")).strip('"'),
+                            "confidence": None,
+                            "tier": None,
+                        })
+
+        return {"bucket": bucket, "count": len(resources), "resources": resources}
+
+    if bucket not in BUCKET_RANGES:
+        raise HTTPException(status_code=400, detail=f"Unknown bucket: {bucket}")
+
+    conf_min, conf_max = BUCKET_RANGES[bucket]
+    resources = []
+
+    async with pool.connection() as conn:
+        # Get correlated resources from graph edges
+        cypher = (
+            " MATCH (a:AAPHost)-[rel:AUTOMATED_BY]->(r:Resource) "
+            "WHERE (rel.status IS NULL OR rel.status <> 'stale') "
+            f"AND rel.confidence >= {conf_min} AND rel.confidence < {conf_max} "
+            "RETURN DISTINCT r.uid AS uid, r.name AS name, r.vendor AS vendor, "
+            "r.normalised_type AS ntype, r.category AS cat, r.state AS state, "
+            "rel.confidence AS conf, rel.tier AS tier"
+        )
+        rows = await execute_cypher(
+            conn, settings.graph_name, cypher,
+            columns="(uid agtype, name agtype, vendor agtype, ntype agtype, cat agtype, state agtype, conf agtype, tier agtype)",
+        )
+        seen_uids: set[str] = set()
+        for row in rows:
+            if isinstance(row, dict):
+                uid = str(row.get("uid", "")).strip('"')
+                if uid in seen_uids:
+                    continue
+                seen_uids.add(uid)
+                tier_val = str(row.get("tier", "")).strip('"')
+                if tier_val in ("None", "null", ""):
+                    tier_val = None
+                resources.append({
+                    "uid": uid,
+                    "name": str(row.get("name", "")).strip('"'),
+                    "vendor": str(row.get("vendor", "")).strip('"'),
+                    "normalised_type": str(row.get("ntype", "")).strip('"'),
+                    "category": str(row.get("cat", "")).strip('"'),
+                    "state": str(row.get("state", "")).strip('"'),
+                    "confidence": float(row.get("conf", 0)),
+                    "tier": tier_val,
+                })
+
+        # Also include pending matches in this bucket
+        pm_result = await conn.execute(
+            "SELECT DISTINCT ON (pm.suggested_resource_uid) "
+            "pm.suggested_resource_uid, pm.match_score, pm.tier "
+            "FROM aap_pending_match pm "
+            "WHERE pm.status = 'pending' AND pm.suggested_resource_uid IS NOT NULL "
+            "AND pm.match_score >= %s AND pm.match_score < %s "
+            "ORDER BY pm.suggested_resource_uid, pm.match_score DESC",
+            (conf_min, conf_max),
+        )
+        for pr in await pm_result.fetchall():
+            ruid = str(pr["suggested_resource_uid"])
+            if ruid in seen_uids:
+                continue
+            seen_uids.add(ruid)
+            # Fetch resource details from graph
+            res_cypher = (
+                f" MATCH (r:Resource {{uid: '{ruid}'}}) "
+                "RETURN r.name AS name, r.vendor AS vendor, "
+                "r.normalised_type AS ntype, r.category AS cat, r.state AS state"
+            )
+            res_rows = await execute_cypher(
+                conn, settings.graph_name, res_cypher,
+                columns="(name agtype, vendor agtype, ntype agtype, cat agtype, state agtype)",
+            )
+            if res_rows and isinstance(res_rows[0], dict):
+                r = res_rows[0]
+                resources.append({
+                    "uid": ruid,
+                    "name": str(r.get("name", "")).strip('"'),
+                    "vendor": str(r.get("vendor", "")).strip('"'),
+                    "normalised_type": str(r.get("ntype", "")).strip('"'),
+                    "category": str(r.get("cat", "")).strip('"'),
+                    "state": str(r.get("state", "")).strip('"'),
+                    "confidence": float(pr["match_score"]),
+                    "tier": pr.get("tier"),
+                })
+
+    return {"bucket": bucket, "count": len(resources), "resources": resources}
 
 
 @router.get("/re-correlate", include_in_schema=False)

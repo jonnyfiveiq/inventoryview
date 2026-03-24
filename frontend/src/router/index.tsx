@@ -15,6 +15,8 @@ const AutomationDashboardPage = lazy(() => import("@/pages/AutomationDashboardPa
 const AutomationUploadPage = lazy(() => import("@/pages/AutomationUploadPage"));
 const AutomationReviewPage = lazy(() => import("@/pages/AutomationReviewPage"));
 const UsageDashboardPage = lazy(() => import("@/pages/UsageDashboardPage"));
+const CorrelationResourcesPage = lazy(() => import("@/pages/CorrelationResourcesPage"));
+const DriftDayPage = lazy(() => import("@/pages/DriftDayPage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 
 function Loading() {
@@ -80,6 +82,14 @@ export const router = createBrowserRouter([
       {
         path: "/admin/usage",
         element: <Suspense fallback={<Loading />}><UsageDashboardPage /></Suspense>,
+      },
+      {
+        path: "/correlation/resources",
+        element: <Suspense fallback={<Loading />}><CorrelationResourcesPage /></Suspense>,
+      },
+      {
+        path: "/drift/day",
+        element: <Suspense fallback={<Loading />}><DriftDayPage /></Suspense>,
       },
     ],
   },

@@ -337,7 +337,7 @@ export interface ReviewAction {
 
 // --- Correlation Temperature ---
 
-export type TemperatureBand = "hot" | "warm" | "tepid" | "cold";
+export type TemperatureBand = "deterministic" | "high" | "moderate" | "low";
 
 export interface ResourceCorrelation {
   aap_host_id: string;
@@ -358,14 +358,22 @@ export interface ResourceCorrelationResponse {
   correlation: ResourceCorrelation | null;
 }
 
+export interface ConfidenceBucket {
+  label: string;
+  count: number;
+  description: string;
+}
+
 export interface FleetTemperatureResponse {
   total_correlated: number;
   total_aap_hosts: number;
+  total_resources: number;
   uncorrelated: number;
   weighted_average_confidence: number;
   temperature: TemperatureBand;
   tier_distribution: Record<string, number>;
   band_distribution: Record<TemperatureBand, number>;
+  confidence_buckets: ConfidenceBucket[];
 }
 
 export interface ReviewResponse {

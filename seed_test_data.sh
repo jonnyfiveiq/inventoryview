@@ -411,7 +411,7 @@ seed_vmware() {
         "normalised_type": "virtual_machine",
         "category": "compute",
         "state": "poweredOn",
-        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 500, "ip_address": "10.200.1.10", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440003", "serial_number": "VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-03", "annotation": "PostgreSQL primary"}
+        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 500, "ip_address": "10.200.1.10", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440003", "serial_number": "VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-03", "macAddress": "00:50:56:a1:02:01", "annotation": "PostgreSQL primary"}
     }'
     create_resource '{
         "name": "rhel9-db-replica",
@@ -791,70 +791,117 @@ create_drift_entry() {
 seed_drift() {
     DRIFT_CREATED=0
 
-    # --- VM power state changes ---
-    bold "VM power state drift"
+    # =======================================================================
+    # VMware drift — spread across Jul 2025 → Mar 2026 for rich heatmaps
+    # =======================================================================
 
-    # rhel9-webserver-01: was powered off for maintenance, then back on
-    create_drift_entry "vm-7001" "state" '"poweredOn"' '"poweredOff"' "2026-03-10T02:00:00Z"
-    create_drift_entry "vm-7001" "state" '"poweredOff"' '"poweredOn"' "2026-03-10T04:30:00Z"
+    # --- Jul 2025: Q3 patching window ---
+    bold "Q3 2025 patching drift"
+    create_drift_entry "host-3001" "version" '"7.0.3"' '"8.0.0"' "2025-07-08T02:00:00Z"
+    create_drift_entry "host-3001" "state" '"connected"' '"maintenance"' "2025-07-08T01:30:00Z"
+    create_drift_entry "host-3001" "state" '"maintenance"' '"connected"' "2025-07-08T04:00:00Z"
+    create_drift_entry "vm-7003" "state" '"poweredOn"' '"poweredOff"' "2025-07-08T01:45:00Z"
+    create_drift_entry "vm-7003" "state" '"poweredOff"' '"poweredOn"' "2025-07-08T04:15:00Z"
+    create_drift_entry "vm-7001" "state" '"poweredOn"' '"poweredOff"' "2025-07-15T02:00:00Z"
+    create_drift_entry "vm-7001" "state" '"poweredOff"' '"poweredOn"' "2025-07-15T03:30:00Z"
 
-    # rhel9-db-primary: restarted during patching
+    # --- Aug 2025: capacity planning ---
+    bold "Aug 2025 capacity drift"
+    create_drift_entry "vm-7003" "num_cpu" '"2"' '"4"' "2025-08-04T03:00:00Z"
+    create_drift_entry "vm-7003" "memory_mb" '"8192"' '"16384"' "2025-08-04T03:00:00Z"
+    create_drift_entry "vm-7001" "disk_gb" '"40"' '"60"' "2025-08-12T04:00:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOn"' '"poweredOff"' "2025-08-18T18:00:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOff"' '"poweredOn"' "2025-08-19T09:00:00Z"
+    create_drift_entry "vm-7002" "memory_mb" '"4096"' '"8192"' "2025-08-22T02:30:00Z"
+
+    # --- Sep 2025: dev testbed churn + incident ---
+    bold "Sep 2025 drift"
+    create_drift_entry "vm-7009" "state" '"poweredOn"' '"poweredOff"' "2025-09-02T17:00:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOff"' '"poweredOn"' "2025-09-03T08:00:00Z"
+    create_drift_entry "vm-7009" "ip_address" '"10.400.1.2"' '"10.400.1.5"' "2025-09-03T08:05:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOn"' '"poweredOff"' "2025-09-15T22:00:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOff"' '"poweredOn"' "2025-09-16T07:30:00Z"
+    create_drift_entry "vm-7005" "memory_mb" '"4096"' '"8192"' "2025-09-10T02:00:00Z"
+    # Incident: db primary crashed and recovered
+    create_drift_entry "vm-7003" "state" '"poweredOn"' '"poweredOff"' "2025-09-20T14:22:00Z"
+    create_drift_entry "vm-7003" "state" '"poweredOff"' '"poweredOn"' "2025-09-20T14:45:00Z"
+
+    # --- Oct 2025: Q4 patching + ESXi upgrades ---
+    bold "Oct 2025 patching drift"
+    create_drift_entry "host-3001" "version" '"8.0.0"' '"8.0.1"' "2025-10-07T02:00:00Z"
+    create_drift_entry "host-3004" "version" '"7.0.3"' '"8.0.0"' "2025-10-07T03:00:00Z"
+    create_drift_entry "host-3004" "state" '"connected"' '"maintenance"' "2025-10-07T02:30:00Z"
+    create_drift_entry "host-3004" "state" '"maintenance"' '"connected"' "2025-10-07T05:00:00Z"
+    create_drift_entry "vm-7010" "state" '"poweredOn"' '"poweredOff"' "2025-10-07T02:45:00Z"
+    create_drift_entry "vm-7010" "state" '"poweredOff"' '"poweredOn"' "2025-10-07T05:15:00Z"
+    create_drift_entry "vm-7002" "num_cpu" '"2"' '"4"' "2025-10-14T03:00:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOn"' '"poweredOff"' "2025-10-20T18:00:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOff"' '"poweredOn"' "2025-10-21T09:00:00Z"
+
+    # --- Nov 2025: pre-holiday hardening ---
+    bold "Nov 2025 drift"
+    create_drift_entry "vm-7001" "num_cpu" '"2"' '"4"' "2025-11-03T03:00:00Z"
+    create_drift_entry "vm-7001" "memory_mb" '"8192"' '"16384"' "2025-11-03T03:00:00Z"
+    create_drift_entry "vm-7012" "tools_status" '"toolsOk"' '"toolsNotRunning"' "2025-11-10T16:00:00Z"
+    create_drift_entry "vm-7012" "state" '"poweredOn"' '"poweredOff"' "2025-11-10T16:05:00Z"
+    create_drift_entry "vm-7005" "num_cpu" '"2"' '"4"' "2025-11-18T02:00:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOn"' '"poweredOff"' "2025-11-25T17:00:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOff"' '"poweredOn"' "2025-11-26T09:00:00Z"
+
+    # --- Dec 2025: quiet month, holiday freeze ---
+    bold "Dec 2025 drift"
+    create_drift_entry "vm-7009" "state" '"poweredOn"' '"poweredOff"' "2025-12-05T18:00:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOff"' '"poweredOn"' "2025-12-08T09:00:00Z"
+    create_drift_entry "vm-7010" "memory_mb" '"8192"' '"12288"' "2025-12-12T02:00:00Z"
+
+    # --- Jan 2026: new year, Q1 capacity + patching ---
+    bold "Jan 2026 drift"
+    create_drift_entry "host-3001" "version" '"8.0.1"' '"8.0.2"' "2026-01-14T02:00:00Z"
+    create_drift_entry "host-3004" "version" '"8.0.0"' '"8.0.1"' "2026-01-14T03:00:00Z"
+    create_drift_entry "host-3004" "state" '"connected"' '"maintenance"' "2026-01-14T02:30:00Z"
+    create_drift_entry "host-3004" "state" '"maintenance"' '"connected"' "2026-01-14T05:00:00Z"
+    create_drift_entry "vm-7003" "num_cpu" '"4"' '"6"' "2026-01-20T03:00:00Z"
+    create_drift_entry "vm-7003" "memory_mb" '"16384"' '"24576"' "2026-01-20T03:00:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOn"' '"poweredOff"' "2026-01-08T18:00:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOff"' '"poweredOn"' "2026-01-09T09:00:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOn"' '"poweredOff"' "2026-01-22T17:30:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOff"' '"poweredOn"' "2026-01-23T08:00:00Z"
+    create_drift_entry "vm-7001" "disk_gb" '"60"' '"80"' "2026-01-27T04:00:00Z"
+
+    # --- Feb 2026: incident response + scaling ---
+    bold "Feb 2026 drift"
+    # Incident: webserver crashed, recovered, then scaled
+    create_drift_entry "vm-7001" "state" '"poweredOn"' '"poweredOff"' "2026-02-03T11:22:00Z"
+    create_drift_entry "vm-7001" "state" '"poweredOff"' '"poweredOn"' "2026-02-03T11:40:00Z"
+    create_drift_entry "vm-7001" "num_cpu" '"4"' '"8"' "2026-02-04T03:00:00Z"
+    create_drift_entry "vm-7002" "num_cpu" '"4"' '"8"' "2026-02-10T03:00:00Z"
+    create_drift_entry "vm-7002" "memory_mb" '"8192"' '"16384"' "2026-02-10T03:00:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOn"' '"poweredOff"' "2026-02-14T18:00:00Z"
+    create_drift_entry "vm-7009" "state" '"poweredOff"' '"poweredOn"' "2026-02-15T09:00:00Z"
+    create_drift_entry "vm-7009" "ip_address" '"10.400.1.5"' '"10.400.1.8"' "2026-02-15T09:05:00Z"
+    create_drift_entry "vm-7005" "memory_mb" '"8192"' '"16384"' "2026-02-20T02:00:00Z"
+
+    # --- Mar 2026: Q1 patching + decommission ---
+    bold "Mar 2026 drift"
+    create_drift_entry "host-3001" "version" '"8.0.2"' '"8.0.3"' "2026-03-06T02:00:00Z"
+    create_drift_entry "host-3004" "version" '"8.0.1"' '"8.0.2"' "2026-03-06T03:00:00Z"
+    create_drift_entry "host-3004" "state" '"connected"' '"maintenance"' "2026-03-06T02:30:00Z"
+    create_drift_entry "host-3004" "state" '"maintenance"' '"connected"' "2026-03-06T05:00:00Z"
+    create_drift_entry "vm-7003" "num_cpu" '"6"' '"8"' "2026-03-07T03:00:00Z"
+    create_drift_entry "vm-7003" "memory_mb" '"24576"' '"32768"' "2026-03-07T03:00:00Z"
     create_drift_entry "vm-7003" "state" '"poweredOn"' '"poweredOff"' "2026-03-14T01:00:00Z"
     create_drift_entry "vm-7003" "state" '"poweredOff"' '"poweredOn"' "2026-03-14T01:15:00Z"
-
-    # dev-rhel9-testbed: frequent power cycles
+    create_drift_entry "vm-7001" "state" '"poweredOn"' '"poweredOff"' "2026-03-10T02:00:00Z"
+    create_drift_entry "vm-7001" "state" '"poweredOff"' '"poweredOn"' "2026-03-10T04:30:00Z"
+    create_drift_entry "vm-7001" "disk_gb" '"80"' '"100"' "2026-03-09T04:00:00Z"
     create_drift_entry "vm-7009" "state" '"poweredOn"' '"poweredOff"' "2026-03-08T18:00:00Z"
     create_drift_entry "vm-7009" "state" '"poweredOff"' '"poweredOn"' "2026-03-09T09:00:00Z"
-    create_drift_entry "vm-7009" "state" '"poweredOn"' '"poweredOff"' "2026-03-12T17:30:00Z"
-    create_drift_entry "vm-7009" "state" '"poweredOff"' '"poweredOn"' "2026-03-13T08:00:00Z"
+    create_drift_entry "vm-7009" "ip_address" '"10.400.1.8"' '"10.400.1.10"' "2026-03-09T09:05:00Z"
     create_drift_entry "vm-7009" "state" '"poweredOn"' '"poweredOff"' "2026-03-18T22:00:00Z"
     create_drift_entry "vm-7009" "state" '"poweredOff"' '"poweredOn"' "2026-03-19T07:30:00Z"
-
-    # decom-oldapp-01: powered off and stayed off
-    create_drift_entry "vm-7012" "state" '"poweredOn"' '"poweredOff"' "2026-03-05T16:00:00Z"
-
-    # --- CPU/Memory configuration changes ---
-    bold "Configuration drift"
-
-    # rhel9-db-primary: scaled up CPU and memory
-    create_drift_entry "vm-7003" "num_cpu" '"4"' '"8"' "2026-03-07T03:00:00Z"
-    create_drift_entry "vm-7003" "memory_mb" '"16384"' '"32768"' "2026-03-07T03:00:00Z"
-
-    # aap-controller-01: memory increase
-    create_drift_entry "vm-7005" "memory_mb" '"8192"' '"16384"' "2026-03-11T02:00:00Z"
-
-    # rhel9-webserver-01: disk expansion
-    create_drift_entry "vm-7001" "disk_gb" '"60"' '"100"' "2026-03-09T04:00:00Z"
-
-    # rhel9-webserver-02: CPU scale-up
-    create_drift_entry "vm-7002" "num_cpu" '"2"' '"4"' "2026-03-12T03:00:00Z"
-
-    # win2022-legacy-app: memory bump for load
-    create_drift_entry "vm-7010" "memory_mb" '"8192"' '"16384"' "2026-03-15T02:00:00Z"
-
-    # --- ESXi host state changes ---
-    bold "Host drift"
-
-    # esxi-prod-04: entered maintenance mode
-    create_drift_entry "host-3004" "state" '"connected"' '"maintenance"' "2026-03-16T01:00:00Z"
-
-    # esxi-prod-04: ESXi version patched
-    create_drift_entry "host-3004" "version" '"8.0.1"' '"8.0.2"' "2026-03-16T03:00:00Z"
-
-    # esxi-prod-01: version patched
-    create_drift_entry "host-3001" "version" '"8.0.2"' '"8.0.3"' "2026-03-06T02:00:00Z"
-
-    # --- IP address changes ---
-    bold "Network drift"
-
-    # dev-rhel9-testbed: IP reassigned via DHCP
-    create_drift_entry "vm-7009" "ip_address" '"10.400.1.5"' '"10.400.1.10"' "2026-03-09T09:05:00Z"
-
-    # --- Tools status changes ---
-    bold "VMware Tools drift"
-
-    # decom-oldapp-01: tools stopped
+    create_drift_entry "vm-7010" "memory_mb" '"12288"' '"16384"' "2026-03-15T02:00:00Z"
     create_drift_entry "vm-7012" "tools_status" '"toolsOk"' '"toolsNotRunning"' "2026-03-05T16:05:00Z"
+    create_drift_entry "vm-7012" "state" '"poweredOn"' '"poweredOff"' "2026-03-05T16:00:00Z"
 
     green "  Drift entries created: $DRIFT_CREATED"
 }
@@ -1225,20 +1272,54 @@ seed_aws() {
     echo ""
     DRIFT_CREATED=0
 
-    # prod-web-01: instance type change (scale-up)
+    # --- Aug 2025: initial scaling ---
+    create_drift_entry "i-0web01aaa" "instance_type" '"t3.large"' '"m6i.large"' "2025-08-05T04:00:00Z"
+    create_drift_entry "i-0web01aaa" "num_cpu" '"2"' '"2"' "2025-08-05T04:00:00Z"
+    create_drift_entry "i-0web01aaa" "memory_mb" '"4096"' '"8192"' "2025-08-05T04:00:00Z"
+    create_drift_entry "rds-prod-pg-primary" "storage_gb" '"100"' '"200"' "2025-08-12T02:00:00Z"
+
+    # --- Sep 2025: dev sandbox churn ---
+    create_drift_entry "i-0devsand01" "state" '"running"' '"stopped"' "2025-09-05T18:00:00Z"
+    create_drift_entry "i-0devsand01" "state" '"stopped"' '"running"' "2025-09-08T09:00:00Z"
+    create_drift_entry "i-0devsand01" "state" '"running"' '"stopped"' "2025-09-19T18:00:00Z"
+    create_drift_entry "i-0devsand01" "state" '"stopped"' '"running"' "2025-09-22T09:00:00Z"
+
+    # --- Oct 2025: RDS minor upgrade ---
+    create_drift_entry "rds-prod-pg-primary" "engine_version" '"15.4"' '"16.1"' "2025-10-15T03:00:00Z"
+    create_drift_entry "rds-prod-pg-replica" "engine_version" '"15.4"' '"16.1"' "2025-10-15T03:30:00Z"
+
+    # --- Nov 2025: Black Friday prep ---
+    create_drift_entry "i-0web01aaa" "instance_type" '"m6i.large"' '"m6i.xlarge"' "2025-11-20T04:00:00Z"
+    create_drift_entry "i-0web01aaa" "num_cpu" '"2"' '"4"' "2025-11-20T04:00:00Z"
+    create_drift_entry "i-0web01aaa" "memory_mb" '"8192"' '"16384"' "2025-11-20T04:00:00Z"
+    create_drift_entry "rds-prod-pg-primary" "storage_gb" '"200"' '"250"' "2025-11-22T02:00:00Z"
+
+    # --- Dec 2025: post-peak scale-down + sandbox ---
+    create_drift_entry "i-0web01aaa" "instance_type" '"m6i.xlarge"' '"m6i.large"' "2025-12-15T04:00:00Z"
+    create_drift_entry "i-0web01aaa" "num_cpu" '"4"' '"2"' "2025-12-15T04:00:00Z"
+    create_drift_entry "i-0web01aaa" "memory_mb" '"16384"' '"8192"' "2025-12-15T04:00:00Z"
+    create_drift_entry "i-0devsand01" "state" '"running"' '"stopped"' "2025-12-20T18:00:00Z"
+
+    # --- Jan 2026: new year infra refresh ---
+    create_drift_entry "i-0devsand01" "state" '"stopped"' '"running"' "2026-01-06T09:00:00Z"
+    create_drift_entry "rds-prod-pg-primary" "engine_version" '"16.1"' '"16.2"' "2026-01-18T03:00:00Z"
+    create_drift_entry "rds-prod-pg-replica" "engine_version" '"16.1"' '"16.2"' "2026-01-18T03:30:00Z"
+    create_drift_entry "i-0devsand01" "state" '"running"' '"stopped"' "2026-01-31T18:00:00Z"
+
+    # --- Feb 2026: capacity bump ---
+    create_drift_entry "i-0devsand01" "state" '"stopped"' '"running"' "2026-02-03T09:00:00Z"
+    create_drift_entry "rds-prod-pg-primary" "storage_gb" '"250"' '"350"' "2026-02-10T02:00:00Z"
+    create_drift_entry "i-0devsand01" "state" '"running"' '"stopped"' "2026-02-14T18:00:00Z"
+    create_drift_entry "i-0devsand01" "state" '"stopped"' '"running"' "2026-02-17T09:00:00Z"
+
+    # --- Mar 2026: latest changes ---
     create_drift_entry "i-0web01aaa" "instance_type" '"m6i.large"' '"m6i.xlarge"' "2026-03-08T04:00:00Z"
     create_drift_entry "i-0web01aaa" "num_cpu" '"2"' '"4"' "2026-03-08T04:00:00Z"
     create_drift_entry "i-0web01aaa" "memory_mb" '"8192"' '"16384"' "2026-03-08T04:00:00Z"
-
-    # dev-sandbox-01: stopped after hours
-    create_drift_entry "i-0devsand01" "state" '"running"' '"stopped"' "2026-03-15T18:00:00Z"
-
-    # RDS engine version upgrade
     create_drift_entry "rds-prod-pg-primary" "engine_version" '"16.2"' '"16.4"' "2026-03-12T03:00:00Z"
     create_drift_entry "rds-prod-pg-replica" "engine_version" '"16.2"' '"16.4"' "2026-03-12T03:30:00Z"
-
-    # RDS storage expansion
-    create_drift_entry "rds-prod-pg-primary" "storage_gb" '"250"' '"500"' "2026-03-10T02:00:00Z"
+    create_drift_entry "rds-prod-pg-primary" "storage_gb" '"350"' '"500"' "2026-03-10T02:00:00Z"
+    create_drift_entry "i-0devsand01" "state" '"running"' '"stopped"' "2026-03-15T18:00:00Z"
 
     green "  Drift entries created: $DRIFT_CREATED"
 }
@@ -1525,19 +1606,53 @@ seed_azure() {
     echo ""
     DRIFT_CREATED=0
 
-    # VM scale-up
+    # --- Jul 2025: initial AKS setup ---
+    create_drift_entry "az-aks-prod" "kubernetes_version" '"1.27.3"' '"1.27.9"' "2025-07-22T03:00:00Z"
+
+    # --- Aug 2025: dev VM churn ---
+    create_drift_entry "az-vm-dev-01" "state" '"running"' '"deallocated"' "2025-08-08T19:00:00Z"
+    create_drift_entry "az-vm-dev-01" "state" '"deallocated"' '"running"' "2025-08-11T08:00:00Z"
+    create_drift_entry "az-vm-dev-01" "state" '"running"' '"deallocated"' "2025-08-22T19:00:00Z"
+    create_drift_entry "az-vm-dev-01" "state" '"deallocated"' '"running"' "2025-08-25T08:00:00Z"
+
+    # --- Sep 2025: SQL scaling ---
+    create_drift_entry "az-sqldb-acme" "max_size_gb" '"64"' '"128"' "2025-09-15T02:00:00Z"
+
+    # --- Oct 2025: AKS upgrade + web VM scale ---
+    create_drift_entry "az-aks-prod" "kubernetes_version" '"1.27.9"' '"1.28.5"' "2025-10-08T03:00:00Z"
+    create_drift_entry "az-vm-web-01" "vm_size" '"Standard_B2s"' '"Standard_D2s_v5"' "2025-10-15T02:00:00Z"
+    create_drift_entry "az-vm-web-01" "num_cpu" '"2"' '"2"' "2025-10-15T02:00:00Z"
+    create_drift_entry "az-vm-web-01" "memory_mb" '"4096"' '"8192"' "2025-10-15T02:00:00Z"
+    create_drift_entry "az-vm-dev-01" "state" '"running"' '"deallocated"' "2025-10-31T19:00:00Z"
+
+    # --- Nov 2025: quiet month ---
+    create_drift_entry "az-vm-dev-01" "state" '"deallocated"' '"running"' "2025-11-03T08:00:00Z"
+    create_drift_entry "az-vm-dev-01" "state" '"running"' '"deallocated"' "2025-11-21T19:00:00Z"
+
+    # --- Dec 2025: holiday freeze, minimal ---
+    create_drift_entry "az-vm-dev-01" "state" '"deallocated"' '"running"' "2025-12-02T08:00:00Z"
+    create_drift_entry "az-vm-dev-01" "state" '"running"' '"deallocated"' "2025-12-19T19:00:00Z"
+
+    # --- Jan 2026: new year scaling ---
+    create_drift_entry "az-vm-dev-01" "state" '"deallocated"' '"running"' "2026-01-06T08:00:00Z"
+    create_drift_entry "az-sqldb-acme" "max_size_gb" '"128"' '"192"' "2026-01-14T02:00:00Z"
+    create_drift_entry "az-vm-web-01" "num_cpu" '"2"' '"4"' "2026-01-20T02:00:00Z"
+    create_drift_entry "az-vm-web-01" "memory_mb" '"8192"' '"16384"' "2026-01-20T02:00:00Z"
+    create_drift_entry "az-vm-dev-01" "state" '"running"' '"deallocated"' "2026-01-24T19:00:00Z"
+
+    # --- Feb 2026: AKS minor patch ---
+    create_drift_entry "az-vm-dev-01" "state" '"deallocated"' '"running"' "2026-02-03T08:00:00Z"
+    create_drift_entry "az-aks-prod" "kubernetes_version" '"1.28.5"' '"1.28.9"' "2026-02-12T03:00:00Z"
+    create_drift_entry "az-vm-dev-01" "state" '"running"' '"deallocated"' "2026-02-21T19:00:00Z"
+
+    # --- Mar 2026: latest ---
     create_drift_entry "az-vm-web-01" "vm_size" '"Standard_D2s_v5"' '"Standard_D4s_v5"' "2026-03-09T02:00:00Z"
-    create_drift_entry "az-vm-web-01" "num_cpu" '"2"' '"4"' "2026-03-09T02:00:00Z"
-    create_drift_entry "az-vm-web-01" "memory_mb" '"8192"' '"16384"' "2026-03-09T02:00:00Z"
-
-    # Dev VM deallocated
+    create_drift_entry "az-vm-web-01" "num_cpu" '"4"' '"4"' "2026-03-09T02:00:00Z"
+    create_drift_entry "az-vm-web-01" "memory_mb" '"16384"' '"16384"' "2026-03-09T02:00:00Z"
+    create_drift_entry "az-aks-prod" "kubernetes_version" '"1.28.9"' '"1.29.2"' "2026-03-11T03:00:00Z"
+    create_drift_entry "az-sqldb-acme" "max_size_gb" '"192"' '"256"' "2026-03-13T02:00:00Z"
+    create_drift_entry "az-vm-dev-01" "state" '"deallocated"' '"running"' "2026-03-03T08:00:00Z"
     create_drift_entry "az-vm-dev-01" "state" '"running"' '"deallocated"' "2026-03-14T19:00:00Z"
-
-    # AKS version upgrade
-    create_drift_entry "az-aks-prod" "kubernetes_version" '"1.28.5"' '"1.29.2"' "2026-03-11T03:00:00Z"
-
-    # SQL database scaled
-    create_drift_entry "az-sqldb-acme" "max_size_gb" '"128"' '"256"' "2026-03-13T02:00:00Z"
 
     green "  Drift entries created: $DRIFT_CREATED"
 }
@@ -1913,24 +2028,66 @@ seed_openshift() {
     echo ""
     DRIFT_CREATED=0
 
-    # Cluster version upgrade
+    # --- Jul 2025: initial cluster upgrade ---
+    create_drift_entry "ocp-prod-rdu" "version" '"4.13.6"' '"4.13.12"' "2025-07-10T02:00:00Z"
+    create_drift_entry "ocp-worker-0" "kubelet_version" '"v1.26.6+a]"' '"v1.26.12+b]"' "2025-07-10T03:00:00Z"
+    create_drift_entry "ocp-worker-1" "kubelet_version" '"v1.26.6+a]"' '"v1.26.12+b]"' "2025-07-10T03:15:00Z"
+    create_drift_entry "ocp-worker-2" "kubelet_version" '"v1.26.6+a]"' '"v1.26.12+b]"' "2025-07-10T03:30:00Z"
+
+    # --- Aug 2025: frontend deployment cadence ---
+    create_drift_entry "ocp-deploy-fe-web" "image" '"registry.acme.com/frontend:v1.8.0"' '"registry.acme.com/frontend:v1.9.0"' "2025-08-06T10:00:00Z"
+    create_drift_entry "ocp-deploy-be-api" "image" '"registry.acme.com/backend:v2.5.0"' '"registry.acme.com/backend:v2.6.0"' "2025-08-06T10:15:00Z"
+    create_drift_entry "ocp-deploy-fe-web" "image" '"registry.acme.com/frontend:v1.9.0"' '"registry.acme.com/frontend:v1.9.2"' "2025-08-20T10:00:00Z"
+
+    # --- Sep 2025: worker node issue + recovery ---
+    create_drift_entry "ocp-worker-3" "state" '"ready"' '"not_ready"' "2025-09-03T08:45:00Z"
+    create_drift_entry "ocp-worker-3" "state" '"not_ready"' '"ready"' "2025-09-03T09:30:00Z"
+    create_drift_entry "ocp-deploy-fe-web" "replicas" '"2"' '"3"' "2025-09-10T09:00:00Z"
+    create_drift_entry "ocp-deploy-be-api" "image" '"registry.acme.com/backend:v2.6.0"' '"registry.acme.com/backend:v2.7.0"' "2025-09-17T10:15:00Z"
+    create_drift_entry "ocp-deploy-fe-web" "image" '"registry.acme.com/frontend:v1.9.2"' '"registry.acme.com/frontend:v2.0.0"' "2025-09-24T10:00:00Z"
+
+    # --- Oct 2025: major cluster upgrade 4.13 → 4.14 ---
+    create_drift_entry "ocp-prod-rdu" "version" '"4.13.12"' '"4.14.5"' "2025-10-14T02:00:00Z"
+    create_drift_entry "ocp-worker-0" "kubelet_version" '"v1.26.12+b]"' '"v1.27.6+c]"' "2025-10-14T03:00:00Z"
+    create_drift_entry "ocp-worker-1" "kubelet_version" '"v1.26.12+b]"' '"v1.27.6+c]"' "2025-10-14T03:15:00Z"
+    create_drift_entry "ocp-worker-2" "kubelet_version" '"v1.26.12+b]"' '"v1.27.6+c]"' "2025-10-14T03:30:00Z"
+    create_drift_entry "ocp-deploy-be-api" "replicas" '"2"' '"3"' "2025-10-20T11:00:00Z"
+
+    # --- Nov 2025: deployment cadence ---
+    create_drift_entry "ocp-deploy-fe-web" "image" '"registry.acme.com/frontend:v2.0.0"' '"registry.acme.com/frontend:v2.1.0"' "2025-11-05T10:00:00Z"
+    create_drift_entry "ocp-deploy-be-api" "image" '"registry.acme.com/backend:v2.7.0"' '"registry.acme.com/backend:v2.8.0"' "2025-11-12T10:15:00Z"
+    create_drift_entry "ocp-deploy-fe-web" "image" '"registry.acme.com/frontend:v2.1.0"' '"registry.acme.com/frontend:v2.2.0"' "2025-11-26T10:00:00Z"
+
+    # --- Dec 2025: patch + scale-down ---
+    create_drift_entry "ocp-prod-rdu" "version" '"4.14.5"' '"4.14.12"' "2025-12-10T02:00:00Z"
+    create_drift_entry "ocp-worker-0" "kubelet_version" '"v1.27.6+c]"' '"v1.27.10+28fee89"' "2025-12-10T03:00:00Z"
+    create_drift_entry "ocp-worker-1" "kubelet_version" '"v1.27.6+c]"' '"v1.27.10+28fee89"' "2025-12-10T03:15:00Z"
+    create_drift_entry "ocp-worker-2" "kubelet_version" '"v1.27.6+c]"' '"v1.27.10+28fee89"' "2025-12-10T03:30:00Z"
+    create_drift_entry "ocp-deploy-fe-web" "replicas" '"3"' '"2"' "2025-12-20T09:00:00Z"
+
+    # --- Jan 2026: new year releases ---
+    create_drift_entry "ocp-deploy-fe-web" "image" '"registry.acme.com/frontend:v2.2.0"' '"registry.acme.com/frontend:v2.3.0"' "2026-01-08T10:00:00Z"
+    create_drift_entry "ocp-deploy-be-api" "image" '"registry.acme.com/backend:v2.8.0"' '"registry.acme.com/backend:v3.0.0"' "2026-01-15T10:15:00Z"
+    create_drift_entry "ocp-deploy-be-api" "replicas" '"3"' '"2"' "2026-01-22T11:00:00Z"
+    create_drift_entry "ocp-worker-3" "state" '"ready"' '"not_ready"' "2026-01-28T14:00:00Z"
+    create_drift_entry "ocp-worker-3" "state" '"not_ready"' '"ready"' "2026-01-28T14:30:00Z"
+
+    # --- Feb 2026: backend releases + scaling ---
+    create_drift_entry "ocp-deploy-be-api" "image" '"registry.acme.com/backend:v3.0.0"' '"registry.acme.com/backend:v3.0.2"' "2026-02-05T10:15:00Z"
+    create_drift_entry "ocp-deploy-fe-web" "image" '"registry.acme.com/frontend:v2.3.0"' '"registry.acme.com/frontend:v2.3.1"' "2026-02-12T10:00:00Z"
+    create_drift_entry "ocp-deploy-be-api" "replicas" '"2"' '"4"' "2026-02-18T11:00:00Z"
+    create_drift_entry "ocp-deploy-fe-web" "replicas" '"2"' '"3"' "2026-02-25T09:00:00Z"
+
+    # --- Mar 2026: major upgrade + latest releases ---
     create_drift_entry "ocp-prod-rdu" "version" '"4.14.12"' '"4.15.8"' "2026-03-06T02:00:00Z"
-
-    # Worker-3 went not_ready
-    create_drift_entry "ocp-worker-3" "state" '"ready"' '"not_ready"' "2026-03-18T14:30:00Z"
-
-    # Frontend deployment image update (rolling release)
-    create_drift_entry "ocp-deploy-fe-web" "image" '"registry.acme.com/frontend:v2.3.0"' '"registry.acme.com/frontend:v2.4.1"' "2026-03-17T10:00:00Z"
-    create_drift_entry "ocp-deploy-fe-web" "replicas" '"2"' '"3"' "2026-03-15T09:00:00Z"
-
-    # Backend API deployment image update
-    create_drift_entry "ocp-deploy-be-api" "image" '"registry.acme.com/backend:v3.0.2"' '"registry.acme.com/backend:v3.1.0"' "2026-03-17T10:15:00Z"
-    create_drift_entry "ocp-deploy-be-api" "replicas" '"2"' '"4"' "2026-03-13T11:00:00Z"
-
-    # Worker node kubelet version during upgrade
     create_drift_entry "ocp-worker-0" "kubelet_version" '"v1.27.10+28fee89"' '"v1.28.8+073f9f8"' "2026-03-06T03:00:00Z"
     create_drift_entry "ocp-worker-1" "kubelet_version" '"v1.27.10+28fee89"' '"v1.28.8+073f9f8"' "2026-03-06T03:15:00Z"
     create_drift_entry "ocp-worker-2" "kubelet_version" '"v1.27.10+28fee89"' '"v1.28.8+073f9f8"' "2026-03-06T03:30:00Z"
+    create_drift_entry "ocp-deploy-be-api" "image" '"registry.acme.com/backend:v3.0.2"' '"registry.acme.com/backend:v3.1.0"' "2026-03-17T10:15:00Z"
+    create_drift_entry "ocp-deploy-be-api" "replicas" '"4"' '"4"' "2026-03-13T11:00:00Z"
+    create_drift_entry "ocp-deploy-fe-web" "image" '"registry.acme.com/frontend:v2.3.1"' '"registry.acme.com/frontend:v2.4.1"' "2026-03-17T10:00:00Z"
+    create_drift_entry "ocp-deploy-fe-web" "replicas" '"3"' '"3"' "2026-03-15T09:00:00Z"
+    create_drift_entry "ocp-worker-3" "state" '"ready"' '"not_ready"' "2026-03-18T14:30:00Z"
 
     green "  Drift entries created: $DRIFT_CREATED"
 }
@@ -2038,36 +2195,36 @@ seed_aap() {
     # full FQDN). The canonical_facts.ansible_machine_id contains the SMBIOS UUID
     # which links all hostname variants back to the parent VM.
     #
-    # Hosts include:
-    # - rhel9-webserver-01 variants (3 hostnames -> 1 VM via SMBIOS 550e8400...0001)
-    # - rhel9-webserver-02 variants (3 hostnames -> 1 VM via SMBIOS 550e8400...0002)
-    # - rhel9-db-primary variants (2 hostnames -> 1 VM via SMBIOS 550e8400...0003)
-    # - rhel9-db-replica (exact match -> VM via SMBIOS 550e8400...0004)
-    # - aap-controller-01 (exact match -> VM via SMBIOS 550e8400...0005)
-    # - satellite-01 variants (2 hostnames -> 1 VM via SMBIOS 550e8400...0007)
-    # - idm-01 variant (1 FQDN -> VM via SMBIOS 550e8400...0008)
-    # - dev-rhel9-testbed (exact match -> VM via SMBIOS 550e8400...0009)
+    # Hosts include varied confidence tiers:
+    # - rhel9-webserver-01 variants (3 hosts -> 1 VM via serial match, Tier 1 ~1.0)
+    # - rhel9-webserver-02 variants (3 hosts -> 1 VM via UUID match, Tier 2 ~0.95)
+    # - rhel9-db-primary variants (2 hosts -> 1 VM via MAC address, Tier 3 ~0.85)
+    # - rhel9-db-replica (1 host -> VM via IP address only, Tier 4 ~0.75)
+    # - aap-controller-01 (1 host -> VM via FQDN only, Tier 5 ~0.50)
+    # - satellite-01 variants (2 hosts -> 1 VM via hostname only, Tier 6 ~0.30)
+    # - idm-01 variant (1 host -> VM via FQDN only, Tier 5 ~0.50)
+    # - dev-rhel9-testbed (1 host -> VM via hostname only, Tier 6 ~0.30)
     # - mystery-server-42 (no matching VM -> goes to pending review)
-    # - legacy-app.corp.local (no matching VM, no SMBIOS -> partial match only)
+    # - legacy-app.corp.local (no matching VM, empty facts)
 
     cat > "$AAP_DATADIR/main_host_20260322.csv" << 'CSVEOF'
 collection_timestamp: 2026-03-22T00:00:00Z
 aap_version: 2.5.1
 id,hostname,canonical_facts,ansible_facts,org_id,inventory_id
-1001,rhel9-webserver-01,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01"", ""ansible_domain"": ""lab.rdu.redhat.com"", ""ansible_default_ipv4"": {""address"": ""10.100.1.10""}}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_product_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-01"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01"", ""ansible_default_ipv4"": {""address"": ""10.100.1.10"", ""macaddress"": ""00:50:56:a1:01:01""}, ""ansible_all_ipv4_addresses"": [""10.100.1.10""]}",1,1
-1002,rhel9-webserver-01.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_product_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-01"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01""}",1,2
-1003,rhel9-webserver-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com""}",1,3
-1004,rhel9-webserver-02,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002"", ""ansible_fqdn"": ""rhel9-webserver-02.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-02"", ""ansible_default_ipv4"": {""address"": ""10.100.1.11""}}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440002"", ""ansible_product_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-02"", ""ansible_fqdn"": ""rhel9-webserver-02.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-02"", ""ansible_default_ipv4"": {""address"": ""10.100.1.11"", ""macaddress"": ""00:50:56:a1:01:02""}, ""ansible_all_ipv4_addresses"": [""10.100.1.11""]}",1,1
-1005,rhel9-webserver-02.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440002""}",1,2
-1006,rhel9-webserver-02.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440002""}",1,3
-1007,rhel9-db-primary,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440003"", ""ansible_fqdn"": ""rhel9-db-primary.lab.rdu.redhat.com"", ""ansible_default_ipv4"": {""address"": ""10.200.1.10""}}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440003"", ""ansible_product_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-03"", ""ansible_fqdn"": ""rhel9-db-primary.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-db-primary"", ""ansible_default_ipv4"": {""address"": ""10.200.1.10"", ""macaddress"": ""00:50:56:a1:02:01""}, ""ansible_all_ipv4_addresses"": [""10.200.1.10""]}",1,1
-1008,rhel9-db-primary.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440003""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440003"", ""ansible_fqdn"": ""rhel9-db-primary.lab.rdu.redhat.com""}",1,1
-1009,rhel9-db-replica,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440004"", ""ansible_fqdn"": ""rhel9-db-replica.lab.rdu.redhat.com"", ""ansible_default_ipv4"": {""address"": ""10.200.1.11""}}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440004"", ""ansible_product_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-04"", ""ansible_fqdn"": ""rhel9-db-replica.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-db-replica"", ""ansible_default_ipv4"": {""address"": ""10.200.1.11"", ""macaddress"": ""00:50:56:a1:02:02""}, ""ansible_all_ipv4_addresses"": [""10.200.1.11""]}",1,1
-1010,aap-controller-01,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440005"", ""ansible_fqdn"": ""aap-controller-01.lab.rdu.redhat.com""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440005"", ""ansible_fqdn"": ""aap-controller-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""aap-controller-01"", ""ansible_default_ipv4"": {""address"": ""10.100.1.50""}, ""ansible_all_ipv4_addresses"": [""10.100.1.50""]}",1,1
-1011,satellite-01,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440007"", ""ansible_fqdn"": ""satellite-01.lab.rdu.redhat.com""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440007"", ""ansible_fqdn"": ""satellite-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""satellite-01"", ""ansible_default_ipv4"": {""address"": ""10.300.1.10""}, ""ansible_all_ipv4_addresses"": [""10.300.1.10""]}",1,1
-1012,satellite-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440007""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440007"", ""ansible_fqdn"": ""satellite-01.lab.rdu.redhat.com""}",1,2
-1013,idm-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440008"", ""ansible_fqdn"": ""idm-01.lab.rdu.redhat.com""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440008"", ""ansible_fqdn"": ""idm-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""idm-01""}",1,1
-1014,dev-rhel9-testbed,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440009""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440009"", ""ansible_hostname"": ""dev-rhel9-testbed""}",1,1
+1001,rhel9-webserver-01,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01"", ""ansible_domain"": ""lab.rdu.redhat.com"", ""ansible_default_ipv4"": {""address"": ""10.100.1.10""}}","{""ansible_product_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-01"", ""ansible_board_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-01"", ""ansible_chassis_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-01"", ""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01"", ""ansible_default_ipv4"": {""address"": ""10.100.1.10"", ""macaddress"": ""00:50:56:a1:01:01""}, ""ansible_all_ipv4_addresses"": [""10.100.1.10""]}",1,1
+1002,rhel9-webserver-01.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01""}","{""ansible_product_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-01"", ""ansible_board_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-01"", ""ansible_chassis_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-01"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01""}",1,2
+1003,rhel9-webserver-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com""}","{""ansible_product_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-01"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com""}",1,3
+1004,rhel9-webserver-02,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002"", ""ansible_fqdn"": ""rhel9-webserver-02.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-02"", ""ansible_default_ipv4"": {""address"": ""10.100.1.11""}}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440002"", ""ansible_fqdn"": ""rhel9-webserver-02.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-02"", ""ansible_default_ipv4"": {""address"": ""10.100.1.11"", ""macaddress"": ""00:50:56:a1:01:02""}, ""ansible_all_ipv4_addresses"": [""10.100.1.11""]}",1,1
+1005,rhel9-webserver-02.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440002"", ""ansible_fqdn"": ""rhel9-webserver-02.lab.rdu.redhat.com""}",1,2
+1006,rhel9-webserver-02.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440002"", ""ansible_fqdn"": ""rhel9-webserver-02.lab.rdu.redhat.com""}",1,3
+1007,rhel9-db-primary,"{""ansible_machine_id"": ""deadbeef-0000-0000-0000-000000000007"", ""ansible_default_ipv4"": {""address"": ""10.200.1.10""}}","{""ansible_hostname"": ""rhel9-db-primary"", ""ansible_default_ipv4"": {""address"": ""10.200.1.10"", ""macaddress"": ""00:50:56:a1:02:01""}, ""ansible_all_ipv4_addresses"": [""10.200.1.10""]}",1,1
+1008,rhel9-db-primary.lab.rdu.redhat.com,"{""ansible_machine_id"": ""deadbeef-0000-0000-0000-000000000007""}","{""ansible_hostname"": ""rhel9-db-primary"", ""ansible_default_ipv4"": {""macaddress"": ""00:50:56:a1:02:01""}}",1,1
+1009,rhel9-db-replica,"{""ansible_machine_id"": ""deadbeef-0000-0000-0000-000000000009"", ""ansible_default_ipv4"": {""address"": ""10.200.1.11""}}","{""ansible_hostname"": ""rhel9-db-replica"", ""ansible_default_ipv4"": {""address"": ""10.200.1.11""}, ""ansible_all_ipv4_addresses"": [""10.200.1.11""]}",1,1
+1010,aap-controller-01,"{""ansible_machine_id"": ""deadbeef-0000-0000-0000-000000000010"", ""ansible_fqdn"": ""aap-controller-01.lab.rdu.redhat.com""}","{""ansible_fqdn"": ""aap-controller-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""aap-controller-01""}",1,1
+1011,satellite-01,"{""ansible_machine_id"": ""deadbeef-0000-0000-0000-000000000011""}","{""ansible_hostname"": ""satellite-01""}",1,1
+1012,satellite-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""deadbeef-0000-0000-0000-000000000011""}","{""ansible_hostname"": ""satellite-01""}",1,2
+1013,idm-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""deadbeef-0000-0000-0000-000000000013"", ""ansible_fqdn"": ""idm-01.lab.rdu.redhat.com""}","{""ansible_fqdn"": ""idm-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""idm-01""}",1,1
+1014,dev-rhel9-testbed,"{""ansible_machine_id"": ""deadbeef-0000-0000-0000-000000000014""}","{""ansible_hostname"": ""dev-rhel9-testbed""}",1,1
 1015,mystery-server-42,"{""ansible_machine_id"": ""aaaabbbb-cccc-dddd-eeee-ffffffffffff""}","{""ansible_product_uuid"": ""aaaabbbb-cccc-dddd-eeee-ffffffffffff"", ""ansible_hostname"": ""mystery-server-42""}",1,4
 1016,legacy-app.corp.local,"{}","{}",1,5
 CSVEOF
@@ -2076,7 +2233,7 @@ CSVEOF
     # Each job execution is tied to a host_id from main_host above.
     # Demonstrates: multiple hostnames for the same machine each have separate job runs,
     # showing the deduplication challenge. The correlation engine should recognise that
-    # host_ids 1001, 1002, 1003 all map to the same VM (via SMBIOS UUID).
+    # host_ids 1001, 1002, 1003 all map to the same VM (via serial number match).
 
     cat > "$AAP_DATADIR/job_host_summary_20260322.csv" << 'CSVEOF'
 collection_timestamp: 2026-03-22T00:00:00Z
@@ -2154,9 +2311,18 @@ switch-tor-02.lab.rdu.redhat.com,network_device,,1
 fw-perimeter-01.lab.rdu.redhat.com,network_device,,1
 CSVEOF
 
-    # Build the ZIP archive
+    # Build the ZIP archive (use python3 — zip may not be installed in container)
     AAP_ZIP="$AAP_TMPDIR/aap_metrics_seed.zip"
-    (cd "$AAP_TMPDIR" && zip -rq "$AAP_ZIP" data/)
+    python3 -c "
+import zipfile, os, sys
+base = os.path.join(sys.argv[1], 'data')
+with zipfile.ZipFile(sys.argv[2], 'w', zipfile.ZIP_DEFLATED) as zf:
+    for root, dirs, files in os.walk(base):
+        for f in files:
+            full = os.path.join(root, f)
+            arc = os.path.join('data', os.path.relpath(full, base))
+            zf.write(full, arc)
+" "$AAP_TMPDIR" "$AAP_ZIP"
 
     # Upload via the automation endpoint
     bold "Uploading AAP metrics archive..."

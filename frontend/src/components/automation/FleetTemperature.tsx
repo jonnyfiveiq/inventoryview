@@ -1,6 +1,23 @@
+import { Link } from "react-router-dom";
 import { useFleetTemperature } from "@/hooks/useAutomation";
 import TemperatureGauge from "./TemperatureGauge";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldCheck, Shield, ShieldAlert, ShieldQuestion, ShieldOff } from "lucide-react";
+
+const CONFIDENCE_BANDS = [
+  { key: "deterministic", label: "Deterministic", icon: ShieldCheck, color: "text-red-400" },
+  { key: "high", label: "High", icon: Shield, color: "text-amber-400" },
+  { key: "moderate", label: "Moderate", icon: ShieldAlert, color: "text-yellow-400" },
+  { key: "low", label: "Low", icon: ShieldQuestion, color: "text-blue-400" },
+] as const;
+
+const TIER_TO_BUCKET: Record<string, string> = {
+  smbios_serial: "deterministic",
+  bios_uuid: "deterministic",
+  mac_address: "high",
+  ip_address: "high",
+  fqdn: "moderate",
+  hostname_heuristic: "low",
+};
 
 export default function FleetTemperature() {
   const { data, isLoading, error } = useFleetTemperature();
@@ -9,7 +26,7 @@ export default function FleetTemperature() {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Loading fleet temperature...
+        Loading fleet correlation health...
       </div>
     );
   }
@@ -17,13 +34,6 @@ export default function FleetTemperature() {
   if (error || !data) {
     return null;
   }
-
-  const bandColors: Record<string, string> = {
-    hot: "text-red-500",
-    warm: "text-amber-500",
-    tepid: "text-yellow-500",
-    cold: "text-blue-500",
-  };
 
   return (
     <div className="rounded-lg border p-4 space-y-4">
@@ -41,46 +51,65 @@ export default function FleetTemperature() {
         size="lg"
       />
 
-      {/* Band distribution */}
+      {/* Confidence distribution */}
       <div className="grid grid-cols-4 gap-2 text-center">
-        {(["hot", "warm", "tepid", "cold"] as const).map((band) => (
-          <div key={band}>
-            <div className={`text-lg font-bold ${bandColors[band]}`}>
-              {data.band_distribution[band] ?? 0}
-            </div>
-            <div className="text-[10px] text-muted-foreground capitalize">
-              {band}
-            </div>
-          </div>
-        ))}
+        {CONFIDENCE_BANDS.map((band) => {
+          const Icon = band.icon;
+          const count = data.band_distribution[band.key] ?? 0;
+          return (
+            <Link
+              key={band.key}
+              to={`/correlation/resources?bucket=${band.key}`}
+              className="rounded-lg p-2 hover:bg-surface-hover transition-colors"
+            >
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Icon className={`w-3.5 h-3.5 ${band.color}`} />
+              </div>
+              <div className={`text-lg font-bold ${band.color}`}>
+                {count}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {band.label}
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
       {/* Tier distribution */}
       {Object.keys(data.tier_distribution).length > 0 && (
         <div className="space-y-1">
           <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            By Tier
+            By Correlation Method
           </h4>
           <div className="space-y-0.5">
             {Object.entries(data.tier_distribution)
               .sort(([, a], [, b]) => b - a)
-              .map(([tier, count]) => (
-                <div
-                  key={tier}
-                  className="flex items-center justify-between text-xs"
-                >
-                  <span className="text-muted-foreground">{tier.replace(/_/g, " ")}</span>
-                  <span className="font-medium">{count}</span>
-                </div>
-              ))}
+              .map(([tier, count]) => {
+                const bucket = TIER_TO_BUCKET[tier] ?? "low";
+                return (
+                  <Link
+                    key={tier}
+                    to={`/correlation/resources?bucket=${bucket}`}
+                    className="flex items-center justify-between text-xs px-2 py-1 rounded hover:bg-surface-hover transition-colors"
+                  >
+                    <span className="text-muted-foreground capitalize">{tier.replace(/_/g, " ")}</span>
+                    <span className="font-medium">{count}</span>
+                  </Link>
+                );
+              })}
           </div>
         </div>
       )}
 
       {data.uncorrelated > 0 && (
-        <div className="text-xs text-muted-foreground">
+        <Link
+          to="/correlation/resources?bucket=unmatched"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-text transition-colors"
+        >
+          <ShieldOff className="w-3.5 h-3.5" />
           {data.uncorrelated} host{data.uncorrelated !== 1 ? "s" : ""} uncorrelated
-        </div>
+        </Link>
       )}
     </div>
   );

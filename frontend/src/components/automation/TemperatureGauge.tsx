@@ -11,10 +11,10 @@ interface TemperatureGaugeProps {
 }
 
 const BANDS = [
-  { min: 0.9, label: "Hot", color: "#ef4444", bg: "bg-red-500" },
-  { min: 0.7, label: "Warm", color: "#f59e0b", bg: "bg-amber-500" },
-  { min: 0.4, label: "Tepid", color: "#eab308", bg: "bg-yellow-500" },
-  { min: 0, label: "Cold", color: "#3b82f6", bg: "bg-blue-500" },
+  { min: 0.9, label: "Deterministic", color: "#ef4444", bg: "bg-red-500" },
+  { min: 0.75, label: "High", color: "#f59e0b", bg: "bg-amber-500" },
+  { min: 0.5, label: "Moderate", color: "#eab308", bg: "bg-yellow-500" },
+  { min: 0, label: "Low", color: "#3b82f6", bg: "bg-blue-500" },
 ] as const;
 
 function getBand(confidence: number) {

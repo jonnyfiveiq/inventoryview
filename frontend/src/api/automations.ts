@@ -115,6 +115,33 @@ export async function getFleetTemperature(): Promise<FleetTemperatureResponse> {
   return res.data;
 }
 
+export interface BucketResource {
+  uid: string;
+  name: string;
+  vendor: string;
+  normalised_type: string;
+  category: string;
+  state: string;
+  confidence: number | null;
+  tier: string | null;
+}
+
+export interface ResourcesByConfidenceResponse {
+  bucket: string;
+  count: number;
+  resources: BucketResource[];
+}
+
+export async function getResourcesByConfidence(
+  bucket: string,
+): Promise<ResourcesByConfidenceResponse> {
+  const res = await apiClient.get<ResourcesByConfidenceResponse>(
+    "/automations/resources-by-confidence",
+    { params: { bucket } },
+  );
+  return res.data;
+}
+
 export async function reCorrelate(
   resourceUid: string,
 ): Promise<{ correlation_job_id: string; message: string }> {

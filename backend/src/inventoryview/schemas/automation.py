@@ -291,14 +291,22 @@ class ResourceCorrelationResponse(BaseModel):
     correlation: ResourceCorrelationDetail | None = None
 
 
+class ConfidenceBucket(BaseModel):
+    label: str
+    count: int
+    description: str
+
+
 class FleetTemperatureResponse(BaseModel):
     total_correlated: int
     total_aap_hosts: int
+    total_resources: int
     uncorrelated: int
     weighted_average_confidence: float
     temperature: str
     tier_distribution: dict[str, int]
     band_distribution: dict[str, int]
+    confidence_buckets: list[ConfidenceBucket]
 
 
 # --- Re-correlate ---
