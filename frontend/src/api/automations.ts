@@ -8,6 +8,9 @@ import type {
   CoverageResponse,
   HistoryResponse,
   AutomationGraphResponse,
+  CorrelationJobResponse,
+  ResourceCorrelationResponse,
+  FleetTemperatureResponse,
 } from "./types";
 
 export async function uploadMetrics(
@@ -84,5 +87,39 @@ export async function getAutomationGraph(
   const res = await apiClient.get<AutomationGraphResponse>(
     `/automations/graph/${resourceUid}`,
   );
+  return res.data;
+}
+
+export async function getCorrelationJob(
+  jobId: string,
+): Promise<CorrelationJobResponse> {
+  const res = await apiClient.get<CorrelationJobResponse>(
+    `/automations/correlation-jobs/${jobId}`,
+  );
+  return res.data;
+}
+
+export async function getResourceCorrelation(
+  uid: string,
+): Promise<ResourceCorrelationResponse> {
+  const res = await apiClient.get<ResourceCorrelationResponse>(
+    `/resources/${uid}/correlation`,
+  );
+  return res.data;
+}
+
+export async function getFleetTemperature(): Promise<FleetTemperatureResponse> {
+  const res = await apiClient.get<FleetTemperatureResponse>(
+    "/automations/fleet-temperature",
+  );
+  return res.data;
+}
+
+export async function reCorrelate(
+  resourceUid: string,
+): Promise<{ correlation_job_id: string; message: string }> {
+  const res = await apiClient.post("/automations/re-correlate", {
+    resource_uid: resourceUid,
+  });
   return res.data;
 }

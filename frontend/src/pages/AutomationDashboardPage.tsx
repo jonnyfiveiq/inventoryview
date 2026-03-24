@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useCoverageStats } from "@/hooks/useAutomation";
 import { useTracking } from "@/hooks/useTracking";
+import FleetTemperature from "@/components/automation/FleetTemperature";
 import { Upload, Download } from "lucide-react";
 
 export default function AutomationDashboardPage() {
@@ -47,6 +48,11 @@ export default function AutomationDashboardPage() {
           <Download className="w-3.5 h-3.5" />
           Export CSV
         </button>
+      </div>
+
+      {/* Fleet Temperature */}
+      <div className="mb-6">
+        <FleetTemperature />
       </div>
 
       {/* Summary cards */}

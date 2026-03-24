@@ -274,6 +274,28 @@ export interface UploadResponse {
   events_counted: number;
   indirect_nodes_imported: number;
   correlation_summary: UploadCorrelationSummary | null;
+  correlation_job_id: string | null;
+  message: string | null;
+}
+
+export type CorrelationJobStatus = "queued" | "running" | "completed" | "failed";
+
+export interface CorrelationJobResponse {
+  job_id: string;
+  status: CorrelationJobStatus;
+  progress: number;
+  total: number;
+  matched: number;
+  queued_for_review: number;
+  errors: string[];
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+export interface MatchedField {
+  ansible_field: string;
+  resource_field: string;
+  values: [string, string];
 }
 
 export interface PendingMatchItem {
@@ -293,6 +315,9 @@ export interface PendingMatchItem {
   } | null;
   match_score: number;
   match_reason: string;
+  tier: string | null;
+  matched_fields: MatchedField[] | null;
+  ambiguity_group_id: string | null;
   status: string;
   created_at: string;
 }
@@ -305,8 +330,42 @@ export interface PendingMatchListResponse {
 
 export interface ReviewAction {
   pending_match_id: string;
-  action: "approve" | "reject" | "ignore";
+  action: "approve" | "reject" | "ignore" | "dismiss" | "confirm";
   override_resource_uid?: string | null;
+  reason?: string | null;
+}
+
+// --- Correlation Temperature ---
+
+export type TemperatureBand = "hot" | "warm" | "tepid" | "cold";
+
+export interface ResourceCorrelation {
+  aap_host_id: string;
+  aap_hostname: string;
+  confidence: number;
+  tier: string;
+  matched_fields: MatchedField[];
+  status: string;
+  temperature: TemperatureBand;
+  confirmed_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ResourceCorrelationResponse {
+  resource_uid: string;
+  is_correlated: boolean;
+  correlation: ResourceCorrelation | null;
+}
+
+export interface FleetTemperatureResponse {
+  total_correlated: number;
+  total_aap_hosts: number;
+  uncorrelated: number;
+  weighted_average_confidence: number;
+  temperature: TemperatureBand;
+  tier_distribution: Record<string, number>;
+  band_distribution: Record<TemperatureBand, number>;
 }
 
 export interface ReviewResponse {

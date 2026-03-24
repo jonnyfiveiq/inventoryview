@@ -1,6 +1,6 @@
 # ScoreGraph Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-03-22
+Auto-generated from all feature plans. Last updated: 2026-03-23
 
 ## Active Technologies
 - TypeScript 5.4+, React 18 + Vite (build), React Router (routing), Shadcn/UI + Tailwind CSS (components/styling), Cytoscape.js (graph visualization), TanStack Query (data fetching/caching), Axios (HTTP client), Zustand (state management) (002-inventory-frontend-dashboard)
@@ -15,6 +15,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-22
 - PostgreSQL 16+ with Apache AGE extension — relational tables for AAP data (hosts, jobs, pending matches, learned mappings), graph nodes (`AAPHost`) and edges (`AUTOMATED_BY`) for correlation (006-aap-automation-correlation)
 - Python 3.12+ (backend), TypeScript 5.4+ (frontend) + FastAPI, psycopg (async), React 18, TanStack Query, Zustand, Tailwind CSS, Shadcn/UI (007-ui-usage-audit)
 - PostgreSQL 16+ (relational tables — usage events and login audit are metadata, not graph data per Constitution Principle I) (007-ui-usage-audit)
+- Python 3.12+ (backend), TypeScript 5.4+ (frontend) + FastAPI, psycopg[binary] (v3, async), Pydantic v2, python-multipart; React 18, TanStack Query v5, Axios, lucide-react, Zustand (008-aap-metrics-correlation)
+- PostgreSQL 16 + Apache AGE extension (graph edges for AUTOMATED_BY; relational tables for reconciliation, exclusions, audit) (008-aap-metrics-correlation)
 
 - Python 3.12+ (async-first) + FastAPI, uvicorn, psycopg[binary] (v3, async), PyJWT, cryptography (AES-256-GCM), argon2-cffi, pydantic, pydantic-settings, alembic (001-foundation-core-api)
 
@@ -35,9 +37,9 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3.12+ (async-first): Follow standard conventions
 
 ## Recent Changes
+- 008-aap-metrics-correlation: Added Python 3.12+ (backend), TypeScript 5.4+ (frontend) + FastAPI, psycopg[binary] (v3, async), Pydantic v2, python-multipart; React 18, TanStack Query v5, Axios, lucide-react, Zustand
 - 007-ui-usage-audit: Added Python 3.12+ (backend), TypeScript 5.4+ (frontend) + FastAPI, psycopg (async), React 18, TanStack Query, Zustand, Tailwind CSS, Shadcn/UI
 - 007-ui-usage-audit: Added Python 3.12+ (backend), TypeScript 5.4+ (frontend) + FastAPI, psycopg (async), React 18, TanStack Query, Zustand, Tailwind CSS, Shadcn/UI
-- 006-aap-automation-correlation: Added Python 3.12+ (async-first) for backend; TypeScript 5.4+ for frontend + FastAPI, psycopg[binary] (v3, async), Pydantic v2, python-multipart (file uploads), zipfile/tarfile (stdlib), csv (stdlib); React 18 + Vite, TanStack Query, Zustand, Cytoscape.js, Axios
 
 
 <!-- MANUAL ADDITIONS START -->

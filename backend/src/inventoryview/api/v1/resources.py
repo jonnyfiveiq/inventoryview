@@ -266,3 +266,69 @@ async def get_graph(
         )
 
     return await get_subgraph(pool, settings.graph_name, uid, depth)
+
+
+@router.get("/{uid}/correlation")
+async def get_resource_correlation(
+    uid: str,
+    request: Request,
+    payload: dict = Depends(require_auth),
+):
+    """Get correlation detail (temperature gauge data) for a resource."""
+    from inventoryview.services.graph import execute_cypher
+
+    pool = get_pool()
+    settings = request.app.state.settings
+
+    def _band(confidence: float) -> str:
+        if confidence >= 0.90:
+            return "hot"
+        if confidence >= 0.70:
+            return "warm"
+        if confidence >= 0.40:
+            return "tepid"
+        return "cold"
+
+    async with pool.connection() as conn:
+        cypher = (
+            f" MATCH (a:AAPHost)-[rel:AUTOMATED_BY]->(r:Resource {{uid: '{uid}'}}) "
+            f"RETURN a.host_id AS host_id, a.hostname AS hostname, "
+            f"rel.confidence AS conf, rel.tier AS tier, "
+            f"rel.matched_fields AS mf, rel.status AS st, "
+            f"rel.confirmed_by AS cb, rel.created_at AS cat, rel.updated_at AS uat"
+        )
+        rows = await execute_cypher(
+            conn, settings.graph_name, cypher,
+            columns="(host_id agtype, hostname agtype, conf agtype, tier agtype, mf agtype, st agtype, cb agtype, cat agtype, uat agtype)",
+        )
+
+    if not rows or not isinstance(rows[0], dict):
+        return {"resource_uid": uid, "is_correlated": False, "correlation": None}
+
+    row = rows[0]
+    conf = float(row.get("conf", 0))
+    import json as _json
+    mf_raw = row.get("mf")
+    matched_fields = []
+    if mf_raw:
+        try:
+            matched_fields = _json.loads(str(mf_raw)) if isinstance(mf_raw, str) else mf_raw
+        except Exception:
+            pass
+
+    return {
+        "resource_uid": uid,
+        "is_correlated": True,
+        "correlation": {
+            "aap_host_id": str(row.get("host_id", "")),
+            "aap_hostname": str(row.get("hostname", "")),
+            "confidence": conf,
+            "tier": str(row.get("tier", "")),
+            "matched_fields": matched_fields,
+            "status": str(row.get("st", "proposed")),
+            "temperature": _band(conf),
+            "confirmed_by": str(row.get("cb", "")) if row.get("cb") else None,
+            "created_at": str(row.get("cat", "")) if row.get("cat") else None,
+            "updated_at": str(row.get("uat", "")) if row.get("uat") else None,
+        },
+    }

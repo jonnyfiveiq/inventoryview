@@ -1,9 +1,22 @@
 """AAP automation correlation models."""
 
 from datetime import datetime
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+
+class CorrelationTier(StrEnum):
+    """Tiered correlation matchers, ordered by confidence."""
+
+    SMBIOS_SERIAL = "smbios_serial"
+    BIOS_UUID = "bios_uuid"
+    MAC_ADDRESS = "mac_address"
+    IP_ADDRESS = "ip_address"
+    FQDN = "fqdn"
+    HOSTNAME_HEURISTIC = "hostname_heuristic"
+    LEARNED_MAPPING = "learned_mapping"
 
 
 class AAPHost(BaseModel):
@@ -13,6 +26,7 @@ class AAPHost(BaseModel):
     host_id: str
     hostname: str
     canonical_facts: dict | None = None
+    ansible_facts: dict | None = None
     smbios_uuid: str | None = None
     org_id: str
     inventory_id: str
@@ -23,9 +37,10 @@ class AAPHost(BaseModel):
     correlation_type: str = "direct"
     correlated_resource_uid: UUID | None = None
     correlation_status: str = "pending"
-    match_score: int | None = None
+    match_score: float | None = None
     match_reason: str | None = None
     import_source: str
+    last_correlated_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -55,8 +70,11 @@ class AAPPendingMatch(BaseModel):
     id: UUID
     aap_host_id: UUID
     suggested_resource_uid: UUID | None = None
-    match_score: int
+    match_score: float
     match_reason: str
+    tier: str | None = None
+    matched_fields: list[dict] | None = None
+    ambiguity_group_id: UUID | None = None
     status: str = "pending"
     reviewed_by: UUID | None = None
     reviewed_at: datetime | None = None
@@ -73,4 +91,30 @@ class AAPLearnedMapping(BaseModel):
     org_id: str
     source_label: str
     created_by: UUID | None = None
+    created_at: datetime
+
+
+class CorrelationExclusion(BaseModel):
+    """A NOT_CORRELATED rule preventing a host-resource pair from being re-proposed."""
+
+    id: int
+    aap_host_id: UUID
+    resource_uid: UUID
+    created_by: str | None = None
+    reason: str | None = None
+    created_at: datetime
+
+
+class CorrelationAuditEntry(BaseModel):
+    """Audit log entry for a correlation action."""
+
+    id: int
+    action: str
+    aap_host_id: UUID | None = None
+    resource_uid: UUID | None = None
+    tier: str | None = None
+    confidence: float | None = None
+    matched_fields: list[dict] | None = None
+    previous_state: dict | None = None
+    actor: str = "system"
     created_at: datetime

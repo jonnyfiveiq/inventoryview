@@ -11,6 +11,8 @@ import AssetChainFlow from "@/components/resource/AssetChainFlow";
 import AddToPlaylistButton from "@/components/playlist/AddToPlaylistButton";
 import ErrorBanner from "@/components/layout/ErrorBanner";
 import AutomationHistory from "@/components/automation/AutomationHistory";
+import TemperatureGauge from "@/components/automation/TemperatureGauge";
+import { useResourceCorrelation } from "@/hooks/useAutomation";
 import { useTracking } from "@/hooks/useTracking";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +38,7 @@ export default function ResourceDetailPage() {
   const { data: relationships } = useResourceRelationships(uid!);
   const { data: driftStatus } = useResourceDriftExists(uid!);
   const { data: assetChain } = useAssetChain(uid!);
+  const { data: correlation } = useResourceCorrelation(uid!);
 
   useEffect(() => {
     if (assetChain && assetChain.nodes.length > 1) {
@@ -121,15 +124,25 @@ export default function ResourceDetailPage() {
       </Link>
 
       <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{resource.name}</h1>
-          <p className="text-text-muted text-sm mt-1">
-            <span className="capitalize">{resource.vendor}</span> &middot;{" "}
-            {resource.vendor_type} &middot;{" "}
-            <span className={cn(stateColors[resource.state ?? ""] || "text-text-dim")}>
-              {resource.state ?? "unknown"}
-            </span>
-          </p>
+        <div className="flex items-start gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">{resource.name}</h1>
+            <p className="text-text-muted text-sm mt-1">
+              <span className="capitalize">{resource.vendor}</span> &middot;{" "}
+              {resource.vendor_type} &middot;{" "}
+              <span className={cn(stateColors[resource.state ?? ""] || "text-text-dim")}>
+                {resource.state ?? "unknown"}
+              </span>
+            </p>
+          </div>
+          {correlation?.is_correlated && correlation.correlation && (
+            <TemperatureGauge
+              confidence={correlation.correlation.confidence}
+              tier={correlation.correlation.tier}
+              variant="thermometer"
+              size="md"
+            />
+          )}
         </div>
         <div className="flex items-center gap-2">
           <AddToPlaylistButton resourceUid={uid!} />

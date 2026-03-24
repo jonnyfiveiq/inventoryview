@@ -3,7 +3,7 @@
 import logging
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, UploadFile
 
 from inventoryview.database import get_pool
 from inventoryview.middleware.auth import require_auth
@@ -11,9 +11,14 @@ from inventoryview.schemas.automation import (
     AAPHostItem,
     AAPHostListResponse,
     AutomationGraphResponse,
+    CorrelationJobResponse,
     CoverageResponse,
+    FleetTemperatureResponse,
     HistoryResponse,
     PendingMatchListResponse,
+    ReCorrelateRequest,
+    ReCorrelateResponse,
+    ResourceCorrelationResponse,
     ReviewRequest,
     ReviewResponse,
     UploadCorrelationSummary,
@@ -26,15 +31,17 @@ router = APIRouter()
 MAX_UPLOAD_SIZE = 200 * 1024 * 1024  # 200MB
 
 
-@router.post("/upload", response_model=UploadResponse)
+@router.post("/upload", response_model=UploadResponse, status_code=202)
 async def upload_metrics(
     request: Request,
+    background_tasks: BackgroundTasks,
     file: UploadFile,
     source_label: str | None = Query(None),
     payload: dict = Depends(require_auth),
 ):
-    """Upload an AAP metrics utility archive and auto-correlate."""
+    """Upload an AAP metrics utility archive. Correlation runs in background."""
     from inventoryview.services.aap_import import extract_archive, persist_import
+    from inventoryview.services.correlation_jobs import create_job
 
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
@@ -61,16 +68,22 @@ async def upload_metrics(
     pool = get_pool()
     stats = await persist_import(pool, csvs, label)
 
-    # Auto-correlate
-    correlation_summary = None
-    try:
-        from inventoryview.services.aap_correlation import correlate_hosts
+    # Launch background correlation
+    correlation_job_id = create_job(total=stats["hosts_imported"])
+    settings = request.app.state.settings
 
-        settings = request.app.state.settings
-        summary = await correlate_hosts(pool, settings.graph_name, label)
-        correlation_summary = UploadCorrelationSummary(**summary)
-    except Exception:
-        logger.exception("Auto-correlation failed after import")
+    async def _run_correlation() -> None:
+        try:
+            from inventoryview.services.aap_correlation import correlate_hosts
+
+            await correlate_hosts(pool, settings.graph_name, label, job_id=correlation_job_id)
+        except Exception:
+            logger.exception("Background correlation failed for job %s", correlation_job_id)
+            from inventoryview.services.correlation_jobs import fail_job
+
+            fail_job(correlation_job_id, "Correlation failed — see server logs")
+
+    background_tasks.add_task(_run_correlation)
 
     return UploadResponse(
         import_id=import_id,
@@ -80,7 +93,8 @@ async def upload_metrics(
         jobs_imported=stats["jobs_imported"],
         events_counted=stats["events_counted"],
         indirect_nodes_imported=stats["indirect_nodes_imported"],
-        correlation_summary=correlation_summary,
+        correlation_job_id=correlation_job_id,
+        message="Import complete. Correlation running in background.",
     )
 
 
@@ -201,8 +215,11 @@ async def list_pending(
     request: Request,
     cursor: str | None = Query(None),
     limit: int = Query(50, ge=1, le=200),
-    min_score: int | None = Query(None),
-    max_score: int | None = Query(None),
+    min_score: float | None = Query(None),
+    max_score: float | None = Query(None),
+    status: str | None = Query(None),
+    tier: str | None = Query(None),
+    ambiguity_group: str | None = Query(None),
     sort: str = Query("score_desc"),
     payload: dict = Depends(require_auth),
 ):
@@ -210,8 +227,8 @@ async def list_pending(
     pool = get_pool()
     settings = request.app.state.settings
 
-    conditions = ["pm.status = 'pending'"]
-    params: dict = {"limit": limit + 1}
+    conditions = ["pm.status = %(filter_status)s"]
+    params: dict = {"limit": limit + 1, "filter_status": status or "pending"}
 
     if min_score is not None:
         conditions.append("pm.match_score >= %(min_score)s")
@@ -219,6 +236,12 @@ async def list_pending(
     if max_score is not None:
         conditions.append("pm.match_score <= %(max_score)s")
         params["max_score"] = max_score
+    if tier:
+        conditions.append("pm.tier = %(tier)s")
+        params["tier"] = tier
+    if ambiguity_group:
+        conditions.append("pm.ambiguity_group_id = %(ambiguity_group)s::uuid")
+        params["ambiguity_group"] = ambiguity_group
 
     where = " AND ".join(conditions)
 
@@ -281,6 +304,19 @@ async def list_pending(
             except Exception:
                 pass
 
+        # Parse matched_fields from JSONB
+        matched_fields_raw = row.get("matched_fields")
+        matched_fields = None
+        if matched_fields_raw:
+            if isinstance(matched_fields_raw, str):
+                try:
+                    import json as _json
+                    matched_fields = _json.loads(matched_fields_raw)
+                except Exception:
+                    pass
+            elif isinstance(matched_fields_raw, list):
+                matched_fields = matched_fields_raw
+
         items.append({
             "id": row["id"],
             "aap_host": {
@@ -293,6 +329,9 @@ async def list_pending(
             "suggested_resource": suggested_resource,
             "match_score": row["match_score"],
             "match_reason": row["match_reason"],
+            "tier": row.get("tier"),
+            "matched_fields": matched_fields,
+            "ambiguity_group_id": str(row["ambiguity_group_id"]) if row.get("ambiguity_group_id") else None,
             "status": row["status"],
             "created_at": row["created_at"],
         })
@@ -518,3 +557,117 @@ async def get_automation_graph(
                 })
 
     return AutomationGraphResponse(nodes=nodes, edges=edges)
+
+
+@router.get("/correlation-jobs/{job_id}", response_model=CorrelationJobResponse)
+async def get_correlation_job(
+    job_id: str,
+    payload: dict = Depends(require_auth),
+):
+    """Poll background correlation job status."""
+    from inventoryview.services.correlation_jobs import get_job_status
+
+    status = get_job_status(job_id)
+    if not status:
+        raise HTTPException(status_code=404, detail="Unknown job ID")
+    return CorrelationJobResponse(**status)
+
+
+@router.get("/fleet-temperature", response_model=FleetTemperatureResponse)
+async def get_fleet_temperature(
+    request: Request,
+    payload: dict = Depends(require_auth),
+):
+    """Aggregate fleet correlation health."""
+    pool = get_pool()
+    settings = request.app.state.settings
+
+    from inventoryview.services.graph import execute_cypher
+
+    def _band(confidence: float) -> str:
+        if confidence >= 0.90:
+            return "hot"
+        if confidence >= 0.70:
+            return "warm"
+        if confidence >= 0.40:
+            return "tepid"
+        return "cold"
+
+    tier_dist: dict[str, int] = {}
+    band_dist: dict[str, int] = {"hot": 0, "warm": 0, "tepid": 0, "cold": 0}
+    total_confidence = 0.0
+    total_correlated = 0
+
+    async with pool.connection() as conn:
+        cypher = (
+            " MATCH (a:AAPHost)-[rel:AUTOMATED_BY]->(r:Resource) "
+            "WHERE rel.status <> 'stale' "
+            "RETURN rel.confidence AS conf, rel.tier AS tier"
+        )
+        rows = await execute_cypher(
+            conn, settings.graph_name, cypher,
+            columns="(conf agtype, tier agtype)",
+        )
+        for row in rows:
+            if isinstance(row, dict):
+                conf = float(row.get("conf", 0))
+                tier = str(row.get("tier", "unknown"))
+                total_confidence += conf
+                total_correlated += 1
+                tier_dist[tier] = tier_dist.get(tier, 0) + 1
+                band_dist[_band(conf)] += 1
+
+        # Total AAP hosts
+        host_result = await conn.execute("SELECT COUNT(*) AS cnt FROM aap_host")
+        host_row = await host_result.fetchone()
+        total_hosts = host_row["cnt"] if host_row else 0
+
+    avg_conf = total_confidence / total_correlated if total_correlated else 0.0
+
+    return FleetTemperatureResponse(
+        total_correlated=total_correlated,
+        total_aap_hosts=total_hosts,
+        uncorrelated=max(0, total_hosts - total_correlated),
+        weighted_average_confidence=round(avg_conf, 4),
+        temperature=_band(avg_conf),
+        tier_distribution=tier_dist,
+        band_distribution=band_dist,
+    )
+
+
+@router.get("/re-correlate", include_in_schema=False)
+async def re_correlate_get():
+    raise HTTPException(status_code=405, detail="Use POST")
+
+
+@router.post("/re-correlate", response_model=ReCorrelateResponse, status_code=202)
+async def re_correlate(
+    request: Request,
+    body: ReCorrelateRequest,
+    background_tasks: BackgroundTasks,
+    payload: dict = Depends(require_auth),
+):
+    """Trigger re-correlation for a specific resource."""
+    from inventoryview.services.correlation_jobs import create_job
+
+    pool = get_pool()
+    settings = request.app.state.settings
+    job_id = create_job(total=1)
+
+    async def _run_re_correlate() -> None:
+        try:
+            from inventoryview.services.aap_correlation import re_correlate_resource
+
+            await re_correlate_resource(pool, settings.graph_name, body.resource_uid, job_id=job_id)
+        except Exception:
+            logger.exception("Re-correlation failed for %s", body.resource_uid)
+            from inventoryview.services.correlation_jobs import fail_job
+
+            fail_job(job_id, f"Re-correlation failed for {body.resource_uid}")
+
+    background_tasks.add_task(_run_re_correlate)
+
+    return ReCorrelateResponse(
+        correlation_job_id=job_id,
+        message=f"Re-correlation triggered for {body.resource_uid}",
+    )

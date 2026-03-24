@@ -182,21 +182,31 @@ async def persist_import(
                 except (json.JSONDecodeError, ValueError):
                     canonical_facts_json = None
 
+            # Extract ansible_facts if present
+            ansible_facts_str = row.get("ansible_facts") or row.get("facts")
+            ansible_facts_json = None
+            if ansible_facts_str:
+                try:
+                    ansible_facts_json = json.loads(ansible_facts_str)
+                except (json.JSONDecodeError, ValueError):
+                    ansible_facts_json = None
+
             # Upsert host
             result = await conn.execute(
                 """
                 INSERT INTO aap_host (
-                    host_id, hostname, canonical_facts, smbios_uuid,
+                    host_id, hostname, canonical_facts, ansible_facts, smbios_uuid,
                     org_id, inventory_id, first_seen, last_seen,
                     total_jobs, total_events, correlation_type, import_source
                 ) VALUES (
-                    %(host_id)s, %(hostname)s, %(canonical_facts)s, %(smbios_uuid)s,
+                    %(host_id)s, %(hostname)s, %(canonical_facts)s, %(ansible_facts)s, %(smbios_uuid)s,
                     %(org_id)s, %(inventory_id)s, %(now)s, %(now)s,
                     0, 0, 'direct', %(source_label)s
                 )
                 ON CONFLICT (host_id, org_id) DO UPDATE SET
                     hostname = EXCLUDED.hostname,
                     canonical_facts = COALESCE(EXCLUDED.canonical_facts, aap_host.canonical_facts),
+                    ansible_facts = COALESCE(EXCLUDED.ansible_facts, aap_host.ansible_facts),
                     smbios_uuid = COALESCE(EXCLUDED.smbios_uuid, aap_host.smbios_uuid),
                     last_seen = EXCLUDED.last_seen,
                     import_source = EXCLUDED.import_source,
@@ -207,6 +217,7 @@ async def persist_import(
                     "host_id": host_id,
                     "hostname": hostname,
                     "canonical_facts": json.dumps(canonical_facts_json) if canonical_facts_json else None,
+                    "ansible_facts": json.dumps(ansible_facts_json) if ansible_facts_json else None,
                     "smbios_uuid": smbios_uuid,
                     "org_id": org_id,
                     "inventory_id": inventory_id,

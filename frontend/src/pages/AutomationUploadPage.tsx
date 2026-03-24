@@ -2,12 +2,16 @@ import { useState, useEffect, useCallback } from "react";
 import { Upload, FileArchive, CheckCircle2, AlertCircle } from "lucide-react";
 import { useUploadMetrics } from "@/hooks/useAutomation";
 import { useTracking } from "@/hooks/useTracking";
+import { useQueryClient } from "@tanstack/react-query";
+import CorrelationJobProgress from "@/components/automation/CorrelationJobProgress";
 import type { UploadResponse } from "@/api/types";
 
 export default function AutomationUploadPage() {
   const { track } = useTracking();
+  const queryClient = useQueryClient();
   const [dragOver, setDragOver] = useState(false);
   const [result, setResult] = useState<UploadResponse | null>(null);
+  const [correlationJobId, setCorrelationJobId] = useState<string | null>(null);
   const upload = useUploadMetrics();
 
   useEffect(() => { track("Automation Metrics", "page_view"); }, []);
@@ -22,7 +26,14 @@ export default function AutomationUploadPage() {
       track("Automation Metrics", "metrics_uploaded");
       upload.mutate(
         { file },
-        { onSuccess: (data) => setResult(data) },
+        {
+          onSuccess: (data) => {
+            setResult(data);
+            if (data.correlation_job_id) {
+              setCorrelationJobId(data.correlation_job_id);
+            }
+          },
+        },
       );
     },
     [upload],
@@ -107,7 +118,22 @@ export default function AutomationUploadPage() {
             <Stat label="Source" value={result.source_label} text />
           </div>
 
-          {result.correlation_summary && (
+          {correlationJobId && (
+            <div className="border-t border-border pt-4 mt-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-3">
+                Correlation Progress
+              </h3>
+              <CorrelationJobProgress
+                jobId={correlationJobId}
+                onComplete={() => {
+                  queryClient.invalidateQueries({ queryKey: ["automation"] });
+                  setCorrelationJobId(null);
+                }}
+              />
+            </div>
+          )}
+
+          {result.correlation_summary && !correlationJobId && (
             <div className="border-t border-border pt-4 mt-4">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-3">
                 Correlation Results

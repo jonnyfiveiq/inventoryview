@@ -8,6 +8,10 @@ import {
   getResourceHistory,
   getCoverageReport,
   getAutomationGraph,
+  getCorrelationJob,
+  getResourceCorrelation,
+  getFleetTemperature,
+  reCorrelate,
 } from "@/api/automations";
 import type { ReviewAction } from "@/api/types";
 
@@ -39,6 +43,8 @@ export function usePendingMatches(params?: {
   limit?: number;
   min_score?: number;
   max_score?: number;
+  tier?: string;
+  ambiguity_group?: string;
   sort?: string;
 }) {
   return useQuery({
@@ -94,5 +100,52 @@ export function useAutomationGraph(resourceUid: string) {
     queryKey: ["automation", "graph", resourceUid],
     queryFn: () => getAutomationGraph(resourceUid),
     enabled: !!resourceUid,
+  });
+}
+
+export function useCorrelationJob(
+  jobId: string | null,
+  { onComplete }: { onComplete?: () => void } = {},
+) {
+  return useQuery({
+    queryKey: ["automation", "correlation-job", jobId],
+    queryFn: () => getCorrelationJob(jobId!),
+    enabled: !!jobId,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (status === "completed" || status === "failed") {
+        if (status === "completed" && onComplete) {
+          onComplete();
+        }
+        return false;
+      }
+      return 2_000;
+    },
+  });
+}
+
+export function useResourceCorrelation(uid: string) {
+  return useQuery({
+    queryKey: ["automation", "correlation", uid],
+    queryFn: () => getResourceCorrelation(uid),
+    enabled: !!uid,
+  });
+}
+
+export function useFleetTemperature() {
+  return useQuery({
+    queryKey: ["automation", "fleet-temperature"],
+    queryFn: getFleetTemperature,
+    staleTime: 30_000,
+  });
+}
+
+export function useReCorrelate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (resourceUid: string) => reCorrelate(resourceUid),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["automation"] });
+    },
   });
 }

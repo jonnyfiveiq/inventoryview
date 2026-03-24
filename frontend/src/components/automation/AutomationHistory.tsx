@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Clock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
-import { useAutomationHistory } from "@/hooks/useAutomation";
+import { useAutomationHistory, useResourceCorrelation } from "@/hooks/useAutomation";
+import TemperatureGauge from "./TemperatureGauge";
 import type { JobExecutionItem } from "@/api/types";
 
 interface AutomationHistoryProps {
@@ -9,6 +10,7 @@ interface AutomationHistoryProps {
 
 export default function AutomationHistory({ resourceUid }: AutomationHistoryProps) {
   const { data, isLoading } = useAutomationHistory(resourceUid);
+  const { data: correlation } = useResourceCorrelation(resourceUid);
 
   if (isLoading) {
     return <div className="h-32 bg-surface rounded-lg animate-pulse" />;
@@ -58,6 +60,13 @@ export default function AutomationHistory({ resourceUid }: AutomationHistoryProp
                   <span className="text-text-dim capitalize">
                     ({h.correlation_type.replace(/_/g, " ")})
                   </span>
+                  {correlation?.is_correlated && correlation.correlation && (
+                    <TemperatureGauge
+                      confidence={correlation.correlation.confidence}
+                      variant="dot"
+                      size="sm"
+                    />
+                  )}
                 </span>
               ))}
             </div>
