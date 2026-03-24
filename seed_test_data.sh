@@ -391,7 +391,7 @@ seed_vmware() {
         "normalised_type": "virtual_machine",
         "category": "compute",
         "state": "poweredOn",
-        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 4, "memory_mb": 8192, "disk_gb": 100, "ip_address": "10.100.1.10", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440001", "annotation": "Production web tier"}
+        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 4, "memory_mb": 8192, "disk_gb": 100, "ip_address": "10.100.1.10", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440001", "serial_number": "VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-01", "annotation": "Production web tier"}
     }'
     create_resource '{
         "name": "rhel9-webserver-02",
@@ -401,7 +401,7 @@ seed_vmware() {
         "normalised_type": "virtual_machine",
         "category": "compute",
         "state": "poweredOn",
-        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 4, "memory_mb": 8192, "disk_gb": 100, "ip_address": "10.100.1.11", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440002", "annotation": "Production web tier"}
+        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 4, "memory_mb": 8192, "disk_gb": 100, "ip_address": "10.100.1.11", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440002", "serial_number": "VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-02", "annotation": "Production web tier"}
     }'
     create_resource '{
         "name": "rhel9-db-primary",
@@ -411,7 +411,7 @@ seed_vmware() {
         "normalised_type": "virtual_machine",
         "category": "compute",
         "state": "poweredOn",
-        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 500, "ip_address": "10.200.1.10", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440003", "annotation": "PostgreSQL primary"}
+        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 500, "ip_address": "10.200.1.10", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440003", "serial_number": "VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-03", "annotation": "PostgreSQL primary"}
     }'
     create_resource '{
         "name": "rhel9-db-replica",
@@ -421,7 +421,7 @@ seed_vmware() {
         "normalised_type": "virtual_machine",
         "category": "compute",
         "state": "poweredOn",
-        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 500, "ip_address": "10.200.1.11", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440004", "annotation": "PostgreSQL streaming replica"}
+        "raw_properties": {"guest_os": "Red Hat Enterprise Linux 9 (64-bit)", "num_cpu": 8, "memory_mb": 32768, "disk_gb": 500, "ip_address": "10.200.1.11", "tools_status": "toolsOk", "smbios_uuid": "550e8400-e29b-41d4-a716-446655440004", "serial_number": "VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-04", "annotation": "PostgreSQL streaming replica"}
     }'
     create_resource '{
         "name": "aap-controller-01",
@@ -2053,23 +2053,23 @@ seed_aap() {
     cat > "$AAP_DATADIR/main_host_20260322.csv" << 'CSVEOF'
 collection_timestamp: 2026-03-22T00:00:00Z
 aap_version: 2.5.1
-id,hostname,canonical_facts,org_id,inventory_id
-1001,rhel9-webserver-01,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01"", ""ansible_domain"": ""lab.rdu.redhat.com"", ""ansible_default_ipv4"": {""address"": ""10.100.1.10""}}",1,1
-1002,rhel9-webserver-01.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01""}",1,2
-1003,rhel9-webserver-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com""}",1,3
-1004,rhel9-webserver-02,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002"", ""ansible_fqdn"": ""rhel9-webserver-02.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-02"", ""ansible_default_ipv4"": {""address"": ""10.100.1.11""}}",1,1
-1005,rhel9-webserver-02.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002""}",1,2
-1006,rhel9-webserver-02.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002""}",1,3
-1007,rhel9-db-primary,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440003"", ""ansible_fqdn"": ""rhel9-db-primary.lab.rdu.redhat.com"", ""ansible_default_ipv4"": {""address"": ""10.200.1.10""}}",1,1
-1008,rhel9-db-primary.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440003""}",1,1
-1009,rhel9-db-replica,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440004"", ""ansible_fqdn"": ""rhel9-db-replica.lab.rdu.redhat.com"", ""ansible_default_ipv4"": {""address"": ""10.200.1.11""}}",1,1
-1010,aap-controller-01,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440005"", ""ansible_fqdn"": ""aap-controller-01.lab.rdu.redhat.com""}",1,1
-1011,satellite-01,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440007"", ""ansible_fqdn"": ""satellite-01.lab.rdu.redhat.com""}",1,1
-1012,satellite-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440007""}",1,2
-1013,idm-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440008"", ""ansible_fqdn"": ""idm-01.lab.rdu.redhat.com""}",1,1
-1014,dev-rhel9-testbed,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440009""}",1,1
-1015,mystery-server-42,"{""ansible_machine_id"": ""aaaabbbb-cccc-dddd-eeee-ffffffffffff""}",1,4
-1016,legacy-app.corp.local,"{}",1,5
+id,hostname,canonical_facts,ansible_facts,org_id,inventory_id
+1001,rhel9-webserver-01,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01"", ""ansible_domain"": ""lab.rdu.redhat.com"", ""ansible_default_ipv4"": {""address"": ""10.100.1.10""}}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_product_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-01"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01"", ""ansible_default_ipv4"": {""address"": ""10.100.1.10"", ""macaddress"": ""00:50:56:a1:01:01""}, ""ansible_all_ipv4_addresses"": [""10.100.1.10""]}",1,1
+1002,rhel9-webserver-01.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_product_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-01"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-01""}",1,2
+1003,rhel9-webserver-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440001"", ""ansible_fqdn"": ""rhel9-webserver-01.lab.rdu.redhat.com""}",1,3
+1004,rhel9-webserver-02,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002"", ""ansible_fqdn"": ""rhel9-webserver-02.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-02"", ""ansible_default_ipv4"": {""address"": ""10.100.1.11""}}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440002"", ""ansible_product_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-02"", ""ansible_fqdn"": ""rhel9-webserver-02.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-webserver-02"", ""ansible_default_ipv4"": {""address"": ""10.100.1.11"", ""macaddress"": ""00:50:56:a1:01:02""}, ""ansible_all_ipv4_addresses"": [""10.100.1.11""]}",1,1
+1005,rhel9-webserver-02.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440002""}",1,2
+1006,rhel9-webserver-02.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440002""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440002""}",1,3
+1007,rhel9-db-primary,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440003"", ""ansible_fqdn"": ""rhel9-db-primary.lab.rdu.redhat.com"", ""ansible_default_ipv4"": {""address"": ""10.200.1.10""}}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440003"", ""ansible_product_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-03"", ""ansible_fqdn"": ""rhel9-db-primary.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-db-primary"", ""ansible_default_ipv4"": {""address"": ""10.200.1.10"", ""macaddress"": ""00:50:56:a1:02:01""}, ""ansible_all_ipv4_addresses"": [""10.200.1.10""]}",1,1
+1008,rhel9-db-primary.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440003""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440003"", ""ansible_fqdn"": ""rhel9-db-primary.lab.rdu.redhat.com""}",1,1
+1009,rhel9-db-replica,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440004"", ""ansible_fqdn"": ""rhel9-db-replica.lab.rdu.redhat.com"", ""ansible_default_ipv4"": {""address"": ""10.200.1.11""}}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440004"", ""ansible_product_serial"": ""VMware-56-4d-e8-40-e2-9b-41-d4-a7-16-44-66-55-44-00-04"", ""ansible_fqdn"": ""rhel9-db-replica.lab.rdu.redhat.com"", ""ansible_hostname"": ""rhel9-db-replica"", ""ansible_default_ipv4"": {""address"": ""10.200.1.11"", ""macaddress"": ""00:50:56:a1:02:02""}, ""ansible_all_ipv4_addresses"": [""10.200.1.11""]}",1,1
+1010,aap-controller-01,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440005"", ""ansible_fqdn"": ""aap-controller-01.lab.rdu.redhat.com""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440005"", ""ansible_fqdn"": ""aap-controller-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""aap-controller-01"", ""ansible_default_ipv4"": {""address"": ""10.100.1.50""}, ""ansible_all_ipv4_addresses"": [""10.100.1.50""]}",1,1
+1011,satellite-01,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440007"", ""ansible_fqdn"": ""satellite-01.lab.rdu.redhat.com""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440007"", ""ansible_fqdn"": ""satellite-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""satellite-01"", ""ansible_default_ipv4"": {""address"": ""10.300.1.10""}, ""ansible_all_ipv4_addresses"": [""10.300.1.10""]}",1,1
+1012,satellite-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440007""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440007"", ""ansible_fqdn"": ""satellite-01.lab.rdu.redhat.com""}",1,2
+1013,idm-01.lab.rdu.redhat.com,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440008"", ""ansible_fqdn"": ""idm-01.lab.rdu.redhat.com""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440008"", ""ansible_fqdn"": ""idm-01.lab.rdu.redhat.com"", ""ansible_hostname"": ""idm-01""}",1,1
+1014,dev-rhel9-testbed,"{""ansible_machine_id"": ""550e8400-e29b-41d4-a716-446655440009""}","{""ansible_product_uuid"": ""550e8400-e29b-41d4-a716-446655440009"", ""ansible_hostname"": ""dev-rhel9-testbed""}",1,1
+1015,mystery-server-42,"{""ansible_machine_id"": ""aaaabbbb-cccc-dddd-eeee-ffffffffffff""}","{""ansible_product_uuid"": ""aaaabbbb-cccc-dddd-eeee-ffffffffffff"", ""ansible_hostname"": ""mystery-server-42""}",1,4
+1016,legacy-app.corp.local,"{}","{}",1,5
 CSVEOF
 
     # ---------- job_host_summary CSV ----------
